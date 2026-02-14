@@ -3,10 +3,27 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
 @dataclass
+class FunctionInfo:
+    name: str
+    args: List[str]
+    docstring: bool
+    is_async: bool
+    decorators: List[str]
+    complexity: int = 1
+
+@dataclass
+class ClassInfo:
+    name: str
+    bases: List[str]
+    methods: List[FunctionInfo]
+    docstring: bool
+    decorators: List[str]
+
+@dataclass
 class AnalysisResult:
     source: str
-    classes: List[str] = field(default_factory=list)
-    functions: List[str] = field(default_factory=list)
+    classes: List[ClassInfo] = field(default_factory=list)
+    functions: List[FunctionInfo] = field(default_factory=list)
     imports: List[str] = field(default_factory=list)
     loc: int = 0
 

@@ -9,7 +9,10 @@ class HeuristicEngine:
     """
     def interpret(self, data: AnalysisResult, baseline: Dict[str, float]) -> Interpretation:
         # 1. Calculate Raw Complexity
-        raw_complexity = len(data.classes) + len(data.functions) + len(data.imports)
+        # Now incorporating method complexity 
+        func_complexity = sum(f.complexity for f in data.functions)
+        class_complexity = sum(sum(m.complexity for m in c.methods) for c in data.classes)
+        raw_complexity = len(data.imports) + func_complexity + class_complexity + len(data.classes)
         
         # 2. Compare to Baseline
         avg = baseline.get("avg_complexity", 10)
@@ -25,12 +28,26 @@ class HeuristicEngine:
         if data.loc < 10:
             role = "stub"
 
-        # 4. Detect Smells
+        # 4. Detect Smells (Enhanced with AST data)
         smells = []
         if relative_complexity > 2.5:
             smells.append(f"Excessive Complexity ({relative_complexity:.1f}x avg)")
         if len(data.classes) > 1 and len(data.functions) > 10:
             smells.append("Mixed Responsibilities (Classes + many functions)")
+
+        # AST-based Smells
+        for f in data.functions:
+            if f.complexity > 10:
+                smells.append(f"Complex Function '{f.name}' (CC: {f.complexity})")
+            if not f.docstring and f.complexity > 5:
+                smells.append(f"Undocumented Complex Function '{f.name}'")
+        
+        for c in data.classes:
+            if len(c.methods) > 20:
+                smells.append(f"Large Class '{c.name}' ({len(c.methods)} methods)")
+            for m in c.methods:
+                 if m.complexity > 10:
+                      smells.append(f"Complex Method '{c.name}.{m.name}' (CC: {m.complexity})")
 
         return Interpretation(
             source=data.source,
