@@ -1,0 +1,12 @@
+{
+  "comparator": {
+    "uses": 2,
+    "avg_confidence": 0.9,
+    "success_rate": 1.0
+  },
+  "complexity_heuristic": {
+    "uses": 41,
+    "avg_confidence": 0.8000000000000005,
+    "success_rate": 1.0
+  }
+}

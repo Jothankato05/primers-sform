@@ -1,0 +1,52 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from core.engine import PrimersEngine
+import os
+import uvicorn
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = FastAPI(title="PrimersGPT", description="Sovereign Intelligence Backend", version="2.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+engine = PrimersEngine()
+
+class ChatRequest(BaseModel):
+    message: str
+    mode: str = "default"
+
+class IngestRequest(BaseModel):
+    target: str # e.g. "github"
+    params: dict 
+
+@app.get("/")
+def read_root():
+    return {"system": "PRIMERS GPT", "status": "ONLINE", "version": "2.0.0"}
+
+@app.post("/chat")
+async def chat_endpoint(request: ChatRequest):
+    response_obj = engine.process(request.message, mode=request.mode)
+    # Convert dataclass to dict for JSON serialization
+    return {"response": response_obj.to_dict()}
+
+@app.post("/ingest")
+async def ingest_endpoint(request: IngestRequest):
+    if request.target == "github":
+        username = request.params.get("username")
+        if not username:
+             raise HTTPException(400, "Username required")
+        res = engine.learn_from_github(username)
+        return {"status": "success", "message": res}
+    return {"status": "error", "message": "Unknown target"}
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
