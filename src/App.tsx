@@ -78,7 +78,15 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showTrace, setShowTrace] = useState<string | null>(null);
-  const [stats, setStats] = useState({ cpu: 12, memory: 24, knowledge_nodes: 0, uptime: '0h 0m', intelligence_mode: '...', health_score: 100 });
+  const [stats, setStats] = useState({
+    cpu: 12,
+    memory: 24,
+    knowledge_nodes: 0,
+    uptime: '0h 0m',
+    intelligence_mode: '...',
+    health_score: 100,
+    proactive_alert: null as string | null
+  });
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -168,7 +176,7 @@ function App() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="app">
+    <div className={`app ${stats.proactive_alert ? 'proactive-alert-active' : ''}`}>
       {/* ── Sidebar ── */}
       <aside className="sidebar">
         {/* Brand */}
@@ -233,13 +241,29 @@ function App() {
 
       {/* ── Main ── */}
       <main className="main">
-        {/* Header */}
+        {/* Topbar */}
         <header className="topbar">
-          <span className="topbar-title">Primers Intelligence</span>
-          <div className="topbar-right">
-            <span className="model-badge">v3.0</span>
+          <div className="topbar-left">
+            <h2 className="topbar-title">Primers Intelligence</h2>
+            <div className="model-badge">Sovereign v3.0</div>
+          </div>
+          <div className="intelligence-status">
+            <div className="status-dot green"></div>
+            <span>Hybrid Inference Active</span>
           </div>
         </header>
+
+        {/* Proactive Auditor Notification */}
+        {stats.proactive_alert && (
+          <div className="proactive-notification">
+            <div className="notif-icon">🛡️</div>
+            <div className="notif-content">
+              <div className="notif-label">Autonomous Auditor Alert</div>
+              <p>{stats.proactive_alert}</p>
+            </div>
+            <button className="notif-action" onClick={() => send(stats.proactive_alert || '')}>Initiate Audit</button>
+          </div>
+        )}
 
         {/* Chat or Empty State */}
         <div className="chat-area">

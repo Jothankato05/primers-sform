@@ -21,6 +21,7 @@ from knowledge.store import KnowledgeStore
 from cognition.experience import ExperienceMonitor
 from cognition.local_llm import LocalLLMConnector
 from knowledge.github import GitHubConnector
+from cognition.auditor import AutonomousAuditor
 
 try:
     import google.generativeai as genai
@@ -60,6 +61,7 @@ class PrimersEngine:
             enabled=self.gov.is_enabled("local_llm")
         )
         self.guard = PolicyGuard()
+        self.auditor = AutonomousAuditor(self.m2)
         
         # External Fallback (Governed separately or via Env)
         self.external_api_key = os.getenv("GOOGLE_API_KEY") 
@@ -154,6 +156,15 @@ class PrimersEngine:
 
         elif "show health" in input_text.lower() or "check health" in input_text.lower():
             response = self._handle_health_check(graph)
+
+        elif "proactive audit" in input_text.lower():
+            target = self.auditor.identify_primary_debt()
+            if target:
+                graph.add_step(Intent.SELF_CORRECTION, "Audit Initiation", 1.0, f"Autonomous trigger for {target['source']}")
+                response = self._handle_analysis(f"analyze {target['source']}", graph)
+                response.content = f"### AUTONOMOUS AUDIT INITIATED\nI am prioritizing `{target['source']}` due to high architectural debt. " + response.content
+            else:
+                response = EngineResponse("No significant architectural debt detected currently.", "info", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CALM, graph.trace)
 
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled

@@ -91,13 +91,17 @@ async def get_stats():
     except:
         health_score = 100
 
+    # Proactive Auditor logic
+    proactive_alert = engine.auditor.prepare_proactive_alert(health_score)
+
     return {
         "cpu": cpu,
         "memory": mem,
         "knowledge_nodes": knowledge_nodes,
         "uptime": uptime_str,
         "intelligence_mode": "HYBRID_HEURISTIC",
-        "health_score": health_score
+        "health_score": health_score,
+        "proactive_alert": proactive_alert
     }
 
 if __name__ == "__main__":
