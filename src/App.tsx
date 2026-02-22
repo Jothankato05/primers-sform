@@ -78,7 +78,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showTrace, setShowTrace] = useState<string | null>(null);
-  const [stats, setStats] = useState({ cpu: 12, memory: 24, knowledge_nodes: 0, uptime: '0h 0m', intelligence_mode: '...' });
+  const [stats, setStats] = useState({ cpu: 12, memory: 24, knowledge_nodes: 0, uptime: '0h 0m', intelligence_mode: '...', health_score: 100 });
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -219,6 +219,14 @@ function App() {
               <div className="stat-label">Uptime</div>
               <div className="stat-value">{stats.uptime}</div>
             </div>
+          </div>
+
+          <div className="health-section" style={{ marginTop: '1rem' }}>
+            <div className="stat-label">Structural Health</div>
+            <div className="health-bar-container">
+              <div className="health-bar-fill" style={{ width: `${stats.health_score}%`, background: stats.health_score > 80 ? '#3fb950' : stats.health_score > 50 ? '#d29922' : '#f85149' }} />
+            </div>
+            <div className="stat-value" style={{ marginTop: '4px', textAlign: 'right' }}>{stats.health_score}/100</div>
           </div>
         </div>
       </aside>

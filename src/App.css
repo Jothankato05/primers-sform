@@ -603,8 +603,18 @@ button {
   background: rgba(63, 185, 80, 0.1);
 }
 
-.line-added .line-content {
-  color: #3fb950;
+.health-bar-container {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.health-bar-fill {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-avatar .avatar-svg {

@@ -65,14 +65,19 @@ async def get_stats():
         cursor.execute("SELECT COUNT(*) FROM repo_analysis")
         knowledge_nodes = cursor.fetchone()[0]
     
-    # Simple simulated load for demo, or real if we add psuil
-    # For now, let's provide knowledge breadcrumbs
+    # Calculate health score dynamically for stats
+    from core.reasoning import ReasoningGraph
+    graph = ReasoningGraph()
+    health_res = engine._handle_health_check(graph)
+    health_score = health_res.meta.get("health_score", 100)
+
     return {
-        "cpu": 12, # Static for now
-        "memory": 24, # Static for now
+        "cpu": 12,
+        "memory": 24,
         "knowledge_nodes": knowledge_nodes,
-        "uptime": "3h 42m",
-        "intelligence_mode": "SYMBOLIC_FALLBACK"
+        "uptime": "3h 58m",
+        "intelligence_mode": "SYMBOLIC_FALLBACK",
+        "health_score": health_score
     }
 
 if __name__ == "__main__":

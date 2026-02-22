@@ -14,6 +14,7 @@ from cognition.heuristics import HeuristicEngine
 from cognition.judge import JudgementCore
 from cognition.comparator import Comparator
 from cognition.analyst import RepoAnalyst
+from core.guard import PolicyGuard, PolicySeverity
 
 # Phase 5 Components
 from knowledge.store import KnowledgeStore
@@ -58,6 +59,7 @@ class PrimersEngine:
         self.local_llm = LocalLLMConnector(
             enabled=self.gov.is_enabled("local_llm")
         )
+        self.guard = PolicyGuard()
         
         # External Fallback (Governed separately or via Env)
         self.external_api_key = os.getenv("GOOGLE_API_KEY") 
@@ -149,6 +151,9 @@ class PrimersEngine:
             graph.add_step(Intent.EMPIRICAL_ANALYSIS, "Graph Assembly", 1.0, "Generating architectural blueprint")
             blueprint = self.repo_analyst.get_blueprint()
             response = EngineResponse(f"### ARCHITECTURAL BLUEPRINT\n{blueprint}", "analysis", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
+
+        elif "show health" in input_text.lower() or "check health" in input_text.lower():
+            response = self._handle_health_check(graph)
 
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled
@@ -283,6 +288,16 @@ class PrimersEngine:
 
         graph.add_step(Intent.EMPIRICAL_ANALYSIS, "Graph Synthesis", avg_conf, f"Synthesized {len(smells)} structural smells")
 
+        # Phase 8: Architectural Guard (Drift Check)
+        violations = self.guard.check_drift(list(targets), self.repo_analyst.graph.edges)
+        health_score = self.guard.get_health_score(violations)
+        
+        full_report += f"\n### SYSTEM HEALTH: {health_score}/100\n"
+        if violations:
+            for v in violations:
+                full_report += f"- [{v.severity.value.upper()}] **{v.policy_id}**: {v.message}\n"
+                full_report += f"  *Mitigation: {v.mitigation}*\n"
+
         # Phase 5: Local LLM Summary if enabled
         if self.local_llm.enabled:
              llm_out = self.local_llm.get_summary(full_report)
@@ -411,3 +426,34 @@ class PrimersEngine:
                  summary += f"- {chunk}\n"
              
         return EngineResponse(summary, "knowledge", 1.0, IntelligenceLevel.EXTERNAL, Tone.ASSERTIVE, graph.trace)
+    def _handle_health_check(self, graph: ReasoningGraph) -> EngineResponse:
+        graph.add_step(Intent.VALIDATION, "Policy Audit", 1.0, "Executing architectural guard rails")
+        # Gather all current analysis for global check
+        targets = []
+        for name, node in self.repo_analyst.graph.nodes.items():
+            if node['type'] == 'file':
+                # We need to recreate basic metadata if not fully analyzed in this session
+                # or just use what analyzer has. For now let's use the analyst's graph metadata.
+                from dataclasses import dataclass
+                @dataclass
+                class MockResult:
+                    source: str
+                    loc: int
+                    classes: List[str]
+                
+                targets.append(MockResult(source=name, loc=node['meta'].get('complexity', 0) * 10, classes=["X"] * len(self.repo_analyst.graph.get_children(name))))
+
+        violations = self.guard.check_drift(targets, self.repo_analyst.graph.edges)
+        score = self.guard.get_health_score(violations)
+        
+        content = f"### ARCHITECTURAL HEALTH SCORE: {score}/100\n"
+        if not violations:
+            content += "✅ All systems operating within nominal architectural parameters.\n"
+        else:
+            for v in violations:
+                content += f"#### [{v.severity.value.upper()}] {v.policy_id}\n"
+                content += f"- **Target**: `{v.target}`\n"
+                content += f"- **Issue**: {v.message}\n"
+                content += f"- **Fix**: {v.mitigation}\n\n"
+
+        return EngineResponse(content, "health", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace, meta={"health_score": score})
