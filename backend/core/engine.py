@@ -275,7 +275,8 @@ class PrimersEngine:
                 "complexity": analysis.loc, # Compatibility
                 "role": interp.role,
                 "class_count": len(analysis.classes),
-                "function_count": len(analysis.functions)
+                "function_count": len(analysis.functions),
+                "health_score": self.guard.get_health_score(self.guard.check_drift([analysis], self.repo_analyst.graph.edges))
             })
 
             # graph.add_step moved outside to avoid RecursionError on large repos

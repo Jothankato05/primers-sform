@@ -26,6 +26,17 @@ class KnowledgeStore:
                     analysis_blob TEXT
                 )
             """)
+            # M2 History: Time-series debt tracking
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS analysis_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_name TEXT,
+                    timestamp TEXT,
+                    loc INTEGER,
+                    complexity REAL,
+                    health_score INTEGER
+                )
+            """)
             conn.commit()
 
     def save_analysis(self, source: str, metrics: Dict[str, Any]):
@@ -43,7 +54,20 @@ class KnowledgeStore:
                 (repo_hash, source_name, files_count, avg_complexity, last_analyzed, analysis_blob)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (repo_hash, source, metrics.get('files', 1), metrics.get('complexity', 0), timestamp, blob))
+            
+            # Record historical snapshot
+            cursor.execute("""
+                INSERT INTO analysis_history (source_name, timestamp, loc, complexity, health_score)
+                VALUES (?, ?, ?, ?, ?)
+            """, (source, timestamp, metrics.get('loc', 0), metrics.get('complexity', 0), metrics.get('health_score', 100)))
             conn.commit()
+
+    def get_history(self, source_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+        if not self.enabled: return []
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT timestamp, loc, complexity, health_score FROM analysis_history WHERE source_name = ? ORDER BY timestamp DESC LIMIT ?", (source_name, limit))
+            return [{"timestamp": r[0], "loc": r[1], "complexity": r[2], "health_score": r[3]} for r in cursor.fetchall()]
 
     def get_baseline(self, source_name: str) -> Optional[Dict[str, Any]]:
         if not self.enabled: return None
