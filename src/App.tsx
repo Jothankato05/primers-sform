@@ -224,7 +224,7 @@ function App() {
           <div className="health-section" style={{ marginTop: '1rem' }}>
             <div className="stat-label">Structural Health</div>
             <div className="health-bar-container">
-              <div className="health-bar-fill" style={{ width: `${stats.health_score}%`, background: stats.health_score > 80 ? '#3fb950' : stats.health_score > 50 ? '#d29922' : '#f85149' }} />
+              <div className={`health-bar-fill ${stats.health_score <= 50 ? 'health-critical' : ''}`} style={{ width: `${stats.health_score}%`, background: stats.health_score > 80 ? '#3fb950' : stats.health_score > 50 ? '#d29922' : '#f85149' }} />
             </div>
             <div className="stat-value" style={{ marginTop: '4px', textAlign: 'right' }}>{stats.health_score}/100</div>
           </div>

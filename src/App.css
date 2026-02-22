@@ -544,6 +544,31 @@ button {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diff-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.diff-badge.delta {
+  color: #3fb950;
+  border: 1px solid rgba(63, 185, 80, 0.2);
+}
+
+.token-keyword {
+  color: #ff7b72;
+  font-weight: 600;
+}
+
+.token-comment {
+  color: #8b949e;
+  font-style: italic;
 }
 
 .diff-grid {
@@ -615,6 +640,24 @@ button {
 .health-bar-fill {
   height: 100%;
   transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.health-critical {
+  animation: health-pulse 2s infinite ease-in-out;
+}
+
+@keyframes health-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    filter: brightness(1.5);
+  }
 }
 
 .sidebar-avatar .avatar-svg {

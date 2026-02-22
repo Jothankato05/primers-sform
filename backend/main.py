@@ -4,9 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.engine import PrimersEngine
 import os
 import uvicorn
+import time
+import psutil
+import sqlite3
 from dotenv import load_dotenv
 
 load_dotenv()
+BOOT_TIME = time.time()
 
 app = FastAPI(title="PrimersGPT", description="Sovereign Intelligence Backend", version="2.0.0")
 
@@ -60,23 +64,39 @@ async def ingest_endpoint(request: IngestRequest):
 @app.get("/stats")
 async def get_stats():
     # Knowledge stats
-    with sqlite3.connect("primers_knowledge.db") as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM repo_analysis")
-        knowledge_nodes = cursor.fetchone()[0]
+    try:
+        with sqlite3.connect("primers_knowledge.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM repo_analysis")
+            knowledge_nodes = cursor.fetchone()[0]
+    except:
+        knowledge_nodes = 0
     
-    # Calculate health score dynamically for stats
+    # System Stats
+    cpu = psutil.cpu_percent()
+    mem = psutil.virtual_memory().percent
+    
+    # Uptime calc
+    uptime_sec = int(time.time() - BOOT_TIME)
+    h = uptime_sec // 3600
+    m = (uptime_sec % 3600) // 60
+    uptime_str = f"{h}h {m}m"
+
+    # Health score
     from core.reasoning import ReasoningGraph
     graph = ReasoningGraph()
-    health_res = engine._handle_health_check(graph)
-    health_score = health_res.meta.get("health_score", 100)
+    try:
+        health_res = engine._handle_health_check(graph)
+        health_score = health_res.meta.get("health_score", 100)
+    except:
+        health_score = 100
 
     return {
-        "cpu": 12,
-        "memory": 24,
+        "cpu": cpu,
+        "memory": mem,
         "knowledge_nodes": knowledge_nodes,
-        "uptime": "3h 58m",
-        "intelligence_mode": "SYMBOLIC_FALLBACK",
+        "uptime": uptime_str,
+        "intelligence_mode": "HYBRID_HEURISTIC",
         "health_score": health_score
     }
 

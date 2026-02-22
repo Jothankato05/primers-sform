@@ -95,3 +95,13 @@ class KnowledgeStore:
             print(f"Search Entities Error: {e}")
             
         return results
+    def get_all_analyses(self) -> Dict[str, Any]:
+        if not self.enabled: return {}
+        
+        results = {}
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT source_name, analysis_blob FROM repo_analysis")
+            for row in cursor.fetchall():
+                results[row[0]] = json.loads(row[1])
+        return results

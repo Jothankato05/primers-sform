@@ -61,7 +61,9 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos }) => 
             <svg viewBox="0 0 100 100" className="avatar-svg">
                 <defs>
                     <filter id="celestial-glow">
-                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feGaussianBlur stdDeviation="3" result="blur">
+                            <animate attributeName="stdDeviation" values="2;4;2" dur="4s" repeatCount="indefinite" />
+                        </feGaussianBlur>
                         <feComposite in="SourceGraphic" in2="blur" operator="over" />
                     </filter>
 

@@ -259,10 +259,12 @@ class PrimersEngine:
             # Layer 3: Judge
             judgement = self.judge.assess(interp, analysis.raw_content if hasattr(analysis, "raw_content") else "")
             
-            # Phase 5: Persist to M2
             self.m2.save_analysis(analysis.source, {
-                "complexity": analysis.loc, # Simplified metric
-                "role": interp.role
+                "loc": analysis.loc,
+                "complexity": analysis.loc, # Compatibility
+                "role": interp.role,
+                "class_count": len(analysis.classes),
+                "function_count": len(analysis.functions)
             })
 
             # graph.add_step moved outside to avoid RecursionError on large repos
@@ -428,20 +430,22 @@ class PrimersEngine:
         return EngineResponse(summary, "knowledge", 1.0, IntelligenceLevel.EXTERNAL, Tone.ASSERTIVE, graph.trace)
     def _handle_health_check(self, graph: ReasoningGraph) -> EngineResponse:
         graph.add_step(Intent.VALIDATION, "Policy Audit", 1.0, "Executing architectural guard rails")
-        # Gather all current analysis for global check
+        # Gather all persisted analysis
+        persisted = self.m2.get_all_analyses()
         targets = []
-        for name, node in self.repo_analyst.graph.nodes.items():
-            if node['type'] == 'file':
-                # We need to recreate basic metadata if not fully analyzed in this session
-                # or just use what analyzer has. For now let's use the analyst's graph metadata.
-                from dataclasses import dataclass
-                @dataclass
-                class MockResult:
-                    source: str
-                    loc: int
-                    classes: List[str]
+        
+        class AnalysisProxy:
+            def __init__(self, source, loc, class_count):
+                self.source = source
+                self.loc = loc
+                self.classes = ["X"] * class_count # Proxy for class list
                 
-                targets.append(MockResult(source=name, loc=node['meta'].get('complexity', 0) * 10, classes=["X"] * len(self.repo_analyst.graph.get_children(name))))
+        for source, data in persisted.items():
+            targets.append(AnalysisProxy(
+                source, 
+                data.get("loc", 0), 
+                data.get("class_count", 0)
+            ))
 
         violations = self.guard.check_drift(targets, self.repo_analyst.graph.edges)
         score = self.guard.get_health_score(violations)
