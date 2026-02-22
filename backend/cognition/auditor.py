@@ -1,6 +1,5 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from cognition.models import PolicyViolation, PolicySeverity
 from knowledge.store import KnowledgeStore
 
 class AutonomousAuditor:
