@@ -111,7 +111,7 @@ function App() {
   const resetIdle = () => {
     setIsIdle(false);
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    idleTimerRef.current = setTimeout(() => setIsIdle(true), 10000); // 10s idle
+    idleTimerRef.current = setTimeout(() => setIsIdle(true), 5000); // 5s idle
   };
 
   useEffect(() => {
