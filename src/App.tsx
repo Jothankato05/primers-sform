@@ -90,6 +90,7 @@ function App() {
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isTyping = input.trim().length > 0;
+  const [currentEmotion, setCurrentEmotion] = useState<string>('neutral');
 
   // Fetch Stats
   useEffect(() => {
@@ -161,6 +162,17 @@ function App() {
       const data = await res.json();
       const engineRes: EngineResponse = data.response;
 
+      // Map Tone to Emotion
+      const emotionMap: Record<string, string> = {
+        'assertive': 'serious',
+        'cautious': 'cautious',
+        'calm': 'calm',
+        'clinical': 'analytical',
+        'empirical': 'analytical'
+      };
+      const emotion = emotionMap[engineRes.tone?.toLowerCase() || ''] || 'neutral';
+      setCurrentEmotion(emotion);
+
       setMessages(p => [...p, {
         id: Date.now().toString(),
         role: 'assistant',
@@ -231,7 +243,7 @@ function App() {
 
         {/* Avatar Section */}
         <div className="avatar-section" style={{ padding: '2rem 1rem', display: 'flex', justifyContent: 'center' }}>
-          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} isIdle={isIdle} />
+          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} isIdle={isIdle} emotion={currentEmotion} />
         </div>
 
         {/* Status */}
