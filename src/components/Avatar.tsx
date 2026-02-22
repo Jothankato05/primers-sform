@@ -130,6 +130,22 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos }) => 
                     strokeLinecap="round"
                 />
 
+                {/* Thinking Gesture - Ethereal Hand */}
+                <g
+                    style={{
+                        transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        transform: `translateY(${isTyping ? -15 : 40}px) translateX(${eyeOffset.x * 0.8}px)`,
+                        opacity: isTyping ? 0.6 : 0
+                    }}
+                >
+                    {/* Palm/Base */}
+                    <path d="M40 105 Q 50 95 60 105" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
+                    {/* Fingers in Thinking Posture */}
+                    <path d="M43 100 L 41 88" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeLinecap="round" />
+                    <path d="M50 98 L 50 82" stroke="rgba(255,255,255,0.4)" strokeWidth="1.2" strokeLinecap="round" filter="url(#celestial-glow)" />
+                    <path d="M57 100 L 59 88" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeLinecap="round" />
+                </g>
+
                 {/* Ambient Particles */}
                 <g opacity="0.4">
                     <circle cx="20" cy="20" r="0.5" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" /></circle>
