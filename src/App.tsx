@@ -89,6 +89,7 @@ function App() {
   });
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isTyping = input.trim().length > 0;
 
   // Fetch Stats
   useEffect(() => {
@@ -207,9 +208,9 @@ function App() {
         {/* Spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Avatar */}
-        <div className="sidebar-avatar">
-          <Avatar isTyping={input.length > 0} isResponding={loading} mousePos={mousePos} />
+        {/* Avatar Section */}
+        <div className="avatar-section" style={{ padding: '2rem 1rem', display: 'flex', justifyContent: 'center' }}>
+          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} />
         </div>
 
         {/* Status */}

@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 
 interface AvatarProps {
     isTyping: boolean;
@@ -7,154 +8,169 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos }) => {
-    const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
-    const [mouthPath, setMouthPath] = useState("M35 75 Q 50 75 65 75");
-    const requestRef = useRef<number>(null);
+    // Parallax logic
+    const springProps = { type: "spring", stiffness: 150, damping: 15, mass: 0.8 } as const;
 
-    useEffect(() => {
-        // Tracking calculation with a more "visceral" weight
+    const parallax = useMemo(() => {
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
+        const dx = (mousePos.x - centerX) / (centerX || 1);
+        const dy = (mousePos.y - centerY) / (centerY || 1);
 
-        const limit = isTyping ? 2 : 6;
-        const dx = (mousePos.x - centerX) / centerX;
-        const dy = (mousePos.y - centerY) / centerY;
-
-        setEyeOffset({
-            x: dx * limit,
-            y: dy * limit
-        });
-    }, [mousePos, isTyping]);
-
-    useEffect(() => {
-        // Organic Mouth Animation (The Living God)
-        let frame = 0;
-        const animate = () => {
-            if (isResponding) {
-                const openness = 5 + Math.sin(frame * 0.2) * 8;
-                const width = 30 + Math.sin(frame * 0.1) * 5;
-                const x1 = 50 - width / 2;
-                const x2 = 50 + width / 2;
-                const controlY = 75 + openness;
-
-                setMouthPath(`M${x1} 75 Q 50 ${controlY} ${x2} 75`);
-                frame++;
-                requestRef.current = requestAnimationFrame(animate);
-            } else {
-                setMouthPath("M35 75 Q 50 76 65 75");
-            }
+        return {
+            head: { x: dx * 4, y: dy * 4, rotateX: -dy * 10, rotateY: dx * 10 },
+            eyes: { x: dx * 8, y: dy * 8 },
+            pupils: { x: dx * 4, y: dy * 4 }
         };
+    }, [mousePos]);
 
-        if (isResponding) {
-            animate();
-        } else {
-            setMouthPath("M35 75 Q 50 75.5 65 75");
-        }
-
-        return () => {
-            if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        };
-    }, [isResponding]);
+    const mouthPaths = {
+        idle: "M35 75 Q 50 76 65 75",
+        thinking: "M40 75 Q 50 75 60 75",
+        speaking: "M30 75 Q 50 85 70 75"
+    };
 
     return (
-        <div className={`avatar-container ${isTyping ? 'concentrating' : ''}`}>
-            <svg viewBox="0 0 100 100" className="avatar-svg">
+        <div className="avatar-wrapper" style={{ perspective: '1000px' }}>
+            <motion.svg
+                viewBox="0 0 100 100"
+                className="avatar-svg"
+                initial={false}
+                animate={parallax.head}
+                transition={springProps}
+            >
                 <defs>
-                    <filter id="celestial-glow">
-                        <feGaussianBlur stdDeviation="3" result="blur">
-                            <animate attributeName="stdDeviation" values="2;4;2" dur="4s" repeatCount="indefinite" />
-                        </feGaussianBlur>
+                    <filter id="celestial-glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="2.5" result="blur" />
                         <feComposite in="SourceGraphic" in2="blur" operator="over" />
                     </filter>
 
-                    <radialGradient id="faceGradient" cx="50%" cy="40%" r="60%">
-                        <stop offset="0%" stopColor="#262626" />
+                    <radialGradient id="soulGradient" cx="50%" cy="40%" r="60%">
+                        <stop offset="0%" stopColor="#2a2a2a" />
                         <stop offset="70%" stopColor="#0a0a0a" />
                         <stop offset="100%" stopColor="#000000" />
                     </radialGradient>
 
-                    <filter id="texture">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" result="noise" />
-                        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
-                    </filter>
+                    <linearGradient id="auraGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="rgba(255,255,255,0.05)" />
+                        <stop offset="50%" stopColor="rgba(255,255,255,0.15)" />
+                        <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
+                    </linearGradient>
                 </defs>
 
-                {/* The Head - Ethereal Matte Surface */}
-                <g filter="url(#texture)">
+                {/* Ethereal Halo - Active during Thinking/Responding */}
+                <motion.circle
+                    cx="50" cy="50" r="45"
+                    fill="none"
+                    stroke="url(#auraGradient)"
+                    strokeWidth="0.3"
+                    animate={{
+                        rotate: 360,
+                        scale: isResponding ? [1, 1.05, 1] : 1,
+                        opacity: isTyping || isResponding ? 0.6 : 0.2
+                    }}
+                    transition={{
+                        rotate: { duration: 10, repeat: Infinity, ease: "linear" },
+                        scale: { duration: 2, repeat: Infinity }
+                    }}
+                />
+
+                {/* Main Head Structure */}
+                <motion.g style={{ filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' }}>
                     <path
                         d="M50 10 C 20 10 15 40 15 60 C 15 85 35 95 50 95 C 65 95 85 85 85 60 C 85 40 80 10 50 10"
-                        fill="url(#faceGradient)"
-                        stroke="rgba(255, 255, 255, 0.05)"
+                        fill="url(#soulGradient)"
+                        stroke="rgba(255, 255, 255, 0.08)"
                         strokeWidth="0.5"
                     />
-                </g>
+                </motion.g>
 
-                {/* Celestial Eyes - Neutral Light */}
-                <g transform={`translate(${eyeOffset.x}, ${eyeOffset.y})`}>
-                    {/* Left Socket */}
-                    <ellipse cx="35" cy="45" rx="8" ry="10" fill="rgba(0,0,0,0.8)" />
-                    {/* Left Iris */}
-                    <circle cx="35" cy="45" r={isTyping ? "1.5" : "3"} fill="#a3a3a3" filter="url(#celestial-glow)">
-                        <animate attributeName="r" values="2.5;3;2.5" dur="4s" repeatCount="indefinite" />
-                    </circle>
+                {/* Sensory Cluster (Eyes) */}
+                <motion.g animate={parallax.eyes} transition={springProps}>
+                    {/* Left Eye */}
+                    <g transform="translate(35, 45)">
+                        <circle r="8" fill="rgba(0,0,0,0.6)" />
+                        <motion.circle
+                            r={isTyping ? 1.5 : 3}
+                            fill="#d4d4d8"
+                            animate={parallax.pupils}
+                            style={{ filter: 'url(#celestial-glow)' }}
+                            transition={springProps}
+                        />
+                    </g>
 
-                    {/* Right Socket */}
-                    <ellipse cx="65" cy="45" rx="8" ry="10" fill="rgba(0,0,0,0.8)" />
-                    {/* Right Iris */}
-                    <circle cx="65" cy="45" r={isTyping ? "1.5" : "3"} fill="#a3a3a3" filter="url(#celestial-glow)">
-                        <animate attributeName="r" values="2.5;3;2.5" dur="4s" repeatCount="indefinite" />
-                    </circle>
-                </g>
+                    {/* Right Eye */}
+                    <g transform="translate(65, 45)">
+                        <circle r="8" fill="rgba(0,0,0,0.6)" />
+                        <motion.circle
+                            r={isTyping ? 1.5 : 3}
+                            fill="#d4d4d8"
+                            animate={parallax.pupils}
+                            style={{ filter: 'url(#celestial-glow)' }}
+                            transition={springProps}
+                        />
+                    </g>
+                </motion.g>
 
-                {/* Brow Lines */}
-                <path
-                    d="M25 35 Q 35 30 43 38"
+                {/* Cognitive Interface (Mouth/Rift) */}
+                <motion.path
+                    d={isResponding ? mouthPaths.speaking : isTyping ? mouthPaths.thinking : mouthPaths.idle}
                     fill="none"
-                    stroke="rgba(255,255,255,0.05)"
-                    strokeWidth="0.5"
-                    style={{ transform: `translateY(${isTyping ? 2 : 0}px)` }}
-                />
-                <path
-                    d="M75 35 Q 65 30 57 38"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.05)"
-                    strokeWidth="0.5"
-                    style={{ transform: `translateY(${isTyping ? 2 : 0}px)` }}
-                />
-
-                {/* Speaking Rift */}
-                <path
-                    d={mouthPath}
-                    fill="none"
-                    stroke={isResponding ? "rgba(255, 255, 255, 0.4)" : "rgba(255,255,255,0.1)"}
-                    strokeWidth={isResponding ? 1 : 0.5}
-                    filter={isResponding ? "url(#celestial-glow)" : "none"}
+                    stroke={isResponding ? "#ffffff" : "rgba(255,255,255,0.2)"}
+                    strokeWidth={isResponding ? 1.5 : 0.8}
                     strokeLinecap="round"
+                    animate={{
+                        d: isResponding ? mouthPaths.speaking : isTyping ? mouthPaths.thinking : mouthPaths.idle,
+                        opacity: isResponding ? [0.6, 1, 0.6] : 1
+                    }}
+                    transition={{
+                        d: { duration: 0.4, ease: "anticipate" },
+                        opacity: { duration: 1.5, repeat: Infinity }
+                    }}
                 />
 
-                {/* Thinking Gesture - Ethereal Hand */}
-                <g
-                    style={{
-                        transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                        transform: `translateY(${isTyping ? -15 : 40}px) translateX(${eyeOffset.x * 0.8}px)`,
-                        opacity: isTyping ? 0.6 : 0
+                {/* Thinking Gesture - High Fidelity */}
+                <motion.g
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{
+                        y: isTyping ? 0 : 50,
+                        opacity: isTyping ? 0.8 : 0,
+                        x: parallax.head.x * 0.5
                     }}
+                    transition={springProps}
                 >
-                    {/* Palm/Base */}
-                    <path d="M40 105 Q 50 95 60 105" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-                    {/* Fingers in Thinking Posture */}
-                    <path d="M43 100 L 41 88" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeLinecap="round" />
-                    <path d="M50 98 L 50 82" stroke="rgba(255,255,255,0.4)" strokeWidth="1.2" strokeLinecap="round" filter="url(#celestial-glow)" />
-                    <path d="M57 100 L 59 88" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeLinecap="round" />
-                </g>
+                    <path d="M40 100 Q 50 92 60 100" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
+                    <motion.path
+                        d="M50 96 L 50 82"
+                        stroke="#fff"
+                        strokeWidth="1.2"
+                        strokeLinecap="round"
+                        animate={{ y: [0, -2, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                    />
+                    <path d="M44 98 L 42 88" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
+                    <path d="M56 98 L 58 88" stroke="rgba(255,255,255,0.3)" strokeWidth="1" strokeLinecap="round" />
+                </motion.g>
 
-                {/* Ambient Particles */}
-                <g opacity="0.4">
-                    <circle cx="20" cy="20" r="0.5" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" /></circle>
-                    <circle cx="80" cy="30" r="0.3" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="5s" repeatCount="indefinite" /></circle>
-                    <circle cx="50" cy="85" r="0.4" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" /></circle>
-                </g>
-            </svg>
+                {/* Ambient Vitality (Particles) */}
+                {[...Array(5)].map((_, i) => (
+                    <motion.circle
+                        key={i}
+                        r="0.4"
+                        fill="#fff"
+                        initial={{ x: Math.random() * 100, y: Math.random() * 100, opacity: 0 }}
+                        animate={{
+                            y: [null, Math.random() * -20],
+                            opacity: [0, 0.4, 0]
+                        }}
+                        transition={{
+                            duration: 3 + Math.random() * 4,
+                            repeat: Infinity,
+                            delay: Math.random() * i
+                        }}
+                    />
+                ))}
+            </motion.svg>
         </div>
     );
 };
