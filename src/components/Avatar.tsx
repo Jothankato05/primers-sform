@@ -7,12 +7,41 @@ interface AvatarProps {
     mousePos: { x: number; y: number };
     isIdle?: boolean;
     emotion?: string;
+    hasAlert?: boolean;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdle, emotion = 'neutral' }) => {
+const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdle, emotion = 'neutral', hasAlert }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const springProps = { type: "spring", stiffness: 150, damping: 15, mass: 0.8 } as const;
     const isWorking = isIdle && !isTyping && !isResponding;
+
+    const browPaths = {
+        neutral: { L: "M25 38 Q 35 38 43 38", R: "M75 38 Q 65 38 57 38" },
+        serious: { L: "M25 40 Q 35 35 43 32", R: "M75 40 Q 65 35 57 32" },
+        cautious: { L: "M25 32 Q 35 35 43 40", R: "M75 32 Q 65 35 57 40" },
+        calm: { L: "M25 36 Q 35 34 43 36", R: "M75 36 Q 65 34 57 36" },
+        curious: { L: "M25 32 Q 35 28 43 32", R: "M75 35 Q 65 38 57 42" },
+        analytical: { L: "M25 35 Q 35 30 43 35", R: "M75 35 Q 65 30 57 35" }
+    };
+
+    const activeEmotion = useMemo(() => {
+        if (isTyping) return 'curious';
+        if (hasAlert && isWorking) return 'serious';
+        return emotion;
+    }, [isTyping, hasAlert, isWorking, emotion]);
+
+    const currentBrows = (browPaths as any)[activeEmotion] || browPaths.neutral;
+
+    const glowColor = useMemo(() => {
+        switch (activeEmotion) {
+            case 'serious': return '#ff4d4d'; // Vivid Red
+            case 'calm': return '#00f2ff';    // Electric Cyan
+            case 'analytical': return '#bd00ff'; // Neon Purple e.g. Code Analysis
+            case 'curious': return '#ffae00';  // Bright Orange e.g. Learning
+            case 'cautious': return '#fbff00'; // Pure Yellow
+            default: return '#ffffff';
+        }
+    }, [activeEmotion]);
 
     // High-performance "Quantum Hacking" Canvas Animation
     useEffect(() => {
@@ -41,9 +70,12 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdl
                 this.char = codeSnips[Math.floor(Math.random() * codeSnips.length)];
                 this.opacity = 0;
             }
-            draw() {
+            draw(color: string) {
                 if (!ctx) return;
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                const r = parseInt(color.slice(1, 3), 16);
+                const g = parseInt(color.slice(3, 5), 16);
+                const b = parseInt(color.slice(5, 7), 16);
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity})`;
                 ctx.font = '6px monospace';
                 ctx.fillText(this.char, this.x, this.y);
                 this.y -= this.speed;
@@ -56,13 +88,13 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdl
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => p.draw());
+            particles.forEach(p => p.draw(glowColor));
             animationFrame = requestAnimationFrame(animate);
         };
         animate();
 
         return () => cancelAnimationFrame(animationFrame);
-    }, [isWorking]);
+    }, [isWorking, glowColor]);
 
     const parallax = useMemo(() => {
         const centerX = window.innerWidth / 2;
@@ -80,16 +112,6 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdl
         };
     }, [mousePos, isWorking]);
 
-    const browPaths = {
-        neutral: { L: "M25 38 Q 35 38 43 38", R: "M75 38 Q 65 38 57 38" },
-        serious: { L: "M25 40 Q 35 35 43 32", R: "M75 40 Q 65 35 57 32" },
-        cautious: { L: "M25 32 Q 35 35 43 40", R: "M75 32 Q 65 35 57 40" },
-        calm: { L: "M25 36 Q 35 34 43 36", R: "M75 36 Q 65 34 57 36" },
-        curious: { L: "M25 32 Q 35 28 43 32", R: "M75 35 Q 65 38 57 42" }
-    };
-
-    const currentBrows = isTyping ? browPaths.curious : (browPaths as any)[emotion] || browPaths.neutral;
-    const glowColor = emotion === 'serious' ? 'rgba(255, 100, 100, 0.5)' : emotion === 'calm' ? 'rgba(100, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.5)';
 
     return (
         <div className="avatar-wrapper" style={{ perspective: '1000px', position: 'relative' }}>
@@ -151,7 +173,7 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdl
                 />
 
                 {/* Brows Section */}
-                <motion.g animate={{ opacity: isWorking ? 0 : 1 }}>
+                <motion.g animate={{ opacity: (isWorking && !hasAlert) ? 0 : 1 }}>
                     <motion.path
                         d={currentBrows.L}
                         fill="none"
@@ -214,9 +236,29 @@ const Avatar: React.FC<AvatarProps> = ({ isTyping, isResponding, mousePos, isIdl
                     cx="50" cy="50" r="45"
                     fill="none"
                     stroke={glowColor}
+                    strokeWidth="0.5"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{
+                        scale: [1, 1.1, 1],
+                        opacity: [0.1, 0.4, 0.1],
+                        strokeWidth: [0.1, 0.8, 0.1]
+                    }}
+                    transition={{
+                        duration: emotion === 'serious' ? 1.5 : 4,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                    style={{ filter: 'blur(2px)' }}
+                />
+
+                {/* Secondary Outer Aura */}
+                <motion.circle
+                    cx="50" cy="50" r="48"
+                    fill="none"
+                    stroke={glowColor}
                     strokeWidth="0.1"
-                    animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.3, 0.1] }}
-                    transition={{ duration: 4, repeat: Infinity }}
+                    animate={{ opacity: [0, 0.2, 0] }}
+                    transition={{ duration: 6, repeat: Infinity, delay: 1 }}
                 />
             </motion.svg>
         </div>

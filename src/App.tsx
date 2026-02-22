@@ -34,7 +34,7 @@ interface Message {
   meta?: any;
 }
 
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.PROD ? "/api" : "http://localhost:8000";
 
 const SUGGESTIONS = [
   { label: "Analyze codebase", prompt: "analyze corpus" },
@@ -167,8 +167,9 @@ function App() {
         'assertive': 'serious',
         'cautious': 'cautious',
         'calm': 'calm',
-        'clinical': 'analytical',
-        'empirical': 'analytical'
+        'analytical': 'analytical',
+        'curious': 'curious',
+        'inconclusive': 'neutral'
       };
       const emotion = emotionMap[engineRes.tone?.toLowerCase() || ''] || 'neutral';
       setCurrentEmotion(emotion);
@@ -243,7 +244,7 @@ function App() {
 
         {/* Avatar Section */}
         <div className="avatar-section" style={{ padding: '2rem 1rem', display: 'flex', justifyContent: 'center' }}>
-          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} isIdle={isIdle} emotion={currentEmotion} />
+          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} isIdle={isIdle} emotion={currentEmotion} hasAlert={!!stats.proactive_alert} />
         </div>
 
         {/* Status */}

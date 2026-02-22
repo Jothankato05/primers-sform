@@ -29,7 +29,16 @@ class ReasoningGraph:
         if not self.steps: return 0.0
         return sum(s.confidence for s in self.steps) / len(self.steps)
 
-    def derive_tone(self, confidence: float) -> Tone:
+    def derive_tone(self, intent: Intent, confidence: float) -> Tone:
+        # Priority mapping based on intent
+        if intent == Intent.EMPIRICAL_ANALYSIS:
+            return Tone.ANALYTICAL
+        if intent in [Intent.INGESTION, Intent.KNOWLEDGE_ACQUISITION]:
+            return Tone.CURIOUS
+        if intent == Intent.VALIDATION:
+            return Tone.CALM
+        
+        # Fallback to confidence-based logic
         if confidence >= 0.8: return Tone.ASSERTIVE
         if confidence >= 0.6: return Tone.CAUTIOUS
         return Tone.INCONCLUSIVE

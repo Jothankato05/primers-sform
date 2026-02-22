@@ -27,8 +27,11 @@ engine = PrimersEngine()
 # Phase 5: Auto-Ingest current directory on startup
 @app.on_event("startup")
 async def startup_event():
-    print("Initial Scan: Ingesting local workspace...")
-    engine.process("ingest .")
+    if not os.getenv("VERCEL"):
+        print("Initial Scan: Ingesting local workspace...")
+        engine.process("ingest .")
+    else:
+        print("Vercel detected: Skipping auto-ingest.")
 
 class ChatRequest(BaseModel):
     message: str
@@ -64,8 +67,9 @@ async def ingest_endpoint(request: IngestRequest):
 @app.get("/stats")
 async def get_stats():
     # Knowledge stats
+    db_path = os.path.join(os.path.dirname(__file__), "primers_knowledge.db")
     try:
-        with sqlite3.connect("primers_knowledge.db") as conn:
+        with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM repo_analysis")
             knowledge_nodes = cursor.fetchone()[0]
@@ -73,8 +77,11 @@ async def get_stats():
         knowledge_nodes = 0
     
     # System Stats
-    cpu = psutil.cpu_percent()
-    mem = psutil.virtual_memory().percent
+    try:
+        cpu = psutil.cpu_percent()
+        mem = psutil.virtual_memory().percent
+    except:
+        cpu, mem = 0, 0
     
     # Uptime calc
     uptime_sec = int(time.time() - BOOT_TIME)
@@ -83,12 +90,14 @@ async def get_stats():
     uptime_str = f"{h}h {m}m"
 
     # Health score
+    from core.types import TraceLog
     from core.reasoning import ReasoningGraph
-    graph = ReasoningGraph()
     try:
+        graph = ReasoningGraph(TraceLog(session_id="stats_check"))
         health_res = engine._handle_health_check(graph)
         health_score = health_res.meta.get("health_score", 100)
-    except:
+    except Exception as e:
+        print(f"Health check failed: {e}")
         health_score = 100
 
     # Proactive Auditor logic
@@ -99,7 +108,7 @@ async def get_stats():
         "memory": mem,
         "knowledge_nodes": knowledge_nodes,
         "uptime": uptime_str,
-        "intelligence_mode": "HYBRID_HEURISTIC",
+        "intelligence_mode": "SOVEREIGN_CLOUD_HYBRID" if engine.model else "HYBRID_HEURISTIC",
         "health_score": health_score,
         "proactive_alert": proactive_alert
     }

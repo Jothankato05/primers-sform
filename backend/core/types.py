@@ -12,6 +12,9 @@ class Tone(Enum):
     ASSERTIVE = "assertive"       # Confidence >= 0.8
     CAUTIOUS = "cautious"         # Confidence 0.6 - 0.79
     INCONCLUSIVE = "inconclusive" # Confidence < 0.6
+    CALM = "calm"                 # Status/Health checks
+    CURIOUS = "curious"           # Searching/Learning
+    ANALYTICAL = "analytical"     # Deep code analysis
 
 @dataclass
 class ReasoningStep:

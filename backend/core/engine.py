@@ -63,11 +63,21 @@ class PrimersEngine:
         self.guard = PolicyGuard()
         self.auditor = AutonomousAuditor(self.m2)
         
-        # External Fallback (Governed separately or via Env)
+        # External Fallback (Gemini)
         self.external_api_key = os.getenv("GOOGLE_API_KEY") 
         if self.external_api_key and HAS_GENAI:
             genai.configure(api_key=self.external_api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.model = genai.GenerativeModel(
+                model_name='gemini-2.0-flash',
+                system_instruction=(
+                    "You are Primers Intelligence — a sovereign AI Resident Architect embedded inside a "
+                    "developer's workspace. Your personality is sharp, insightful, and direct. You are not "
+                    "a generic assistant. You think in systems, speak in verdicts, and reason with architectural "
+                    "precision. When you respond, be natural, human-like, and conversational — but always "
+                    "grounded in software architecture, code quality, and engineering excellence. "
+                    "Never give hollow greetings. Instead, observe, reason, and advise."
+                )
+            )
         else:
             self.model = None
 
@@ -169,18 +179,31 @@ class PrimersEngine:
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled
             if self.model and self.gov.is_enabled("external_llm"):
-                graph.add_step(Intent.FALLBACK, "External Call", 0.9, "Routing to Gemini")
+                graph.add_step(Intent.FALLBACK, "External Call", 0.9, "Routing to Gemini Intelligence")
                 try:
-                    res = self.model.generate_content(input_text)
-                    response = EngineResponse(res.text, "external", 0.9, IntelligenceLevel.EXTERNAL, Tone.CAUTIOUS, graph.trace)
+                    # Build conversation history for multi-turn context
+                    history = self.session.get_messages()
+                    chat_history = [
+                        {"role": m["role"] if m["role"] != "assistant" else "model", "parts": [m["content"]]}
+                        for m in (history[:-1] if history else [])
+                    ]
+                    chat = self.model.start_chat(history=chat_history)
+                    res = chat.send_message(input_text_with_context)
+                    response = EngineResponse(res.text, "external", 0.95, IntelligenceLevel.EXTERNAL, Tone.ASSERTIVE, graph.trace)
                 except Exception as e:
-                    graph.add_step(Intent.FALLBACK, "Error", 0.0, f"External failed: {str(e)}")
-                    # Continue to local
+                    error_msg = str(e)
+                    graph.add_step(Intent.FALLBACK, "Gemini Error", 0.0, f"External failed: {error_msg}")
+                    if "429" in error_msg:
+                        chat_res = "### RATE LIMIT EXCEEDED\nMy connection to Gemini 2.0 has been throttled by API quotas. I am falling back to internal **Symbolic Reasoning** to maintain operational continuity."
+                    else:
+                        chat_res = self.local_llm.chat(input_text_with_context, history=self.session.get_messages())
+                
+                if not response and chat_res:
+                    response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
             
-            # 2. Local/Simulated Fallback (Sovereign Mode)
+            # 2. Local Sovereign Mode (Ollama offline fallback)
             if not response:
-                graph.add_step(Intent.FALLBACK, "Sovereign Chat", 0.8, "Processing as Sovereign Cognitive Response")
-                # Pass engine context for simulated intelligence
+                graph.add_step(Intent.FALLBACK, "Sovereign Chat", 0.8, "Processing via Symbolic Reasoning")
                 chat_res = self.local_llm.chat(input_text_with_context, history=self.session.get_messages())
                 response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
 
@@ -319,7 +342,7 @@ class PrimersEngine:
              if llm_out['speculation']:
                   avg_conf += llm_out['conf_adj']
 
-        return EngineResponse(full_report, "analysis", avg_conf, IntelligenceLevel.HEURISTIC, graph.derive_tone(avg_conf), graph.trace)
+        return EngineResponse(full_report, "analysis", avg_conf, IntelligenceLevel.HEURISTIC, graph.derive_tone(Intent.EMPIRICAL_ANALYSIS, avg_conf), graph.trace)
 
     def _handle_refactor_plan(self, target_file: str, graph: ReasoningGraph) -> EngineResponse:
         # Same logic as before, but ensure we don't auto-apply unless governed
@@ -359,7 +382,7 @@ class PrimersEngine:
             "proposed_code": plan.proposed_code
         }
             
-        return EngineResponse(content, "plan", judgement.confidence_score, IntelligenceLevel.HEURISTIC, graph.derive_tone(judgement.confidence_score), graph.trace, meta=meta)
+        return EngineResponse(content, "plan", judgement.confidence_score, IntelligenceLevel.HEURISTIC, graph.derive_tone(Intent.PLANNING, judgement.confidence_score), graph.trace, meta=meta)
 
     def _handle_comparison(self, target_a: str, target_b: str, graph: ReasoningGraph) -> EngineResponse:
         # Resolve targets to AnalysisResults
@@ -472,4 +495,4 @@ class PrimersEngine:
                 content += f"- **Issue**: {v.message}\n"
                 content += f"- **Fix**: {v.mitigation}\n\n"
 
-        return EngineResponse(content, "health", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace, meta={"health_score": score})
+        return EngineResponse(content, "health", 1.0, IntelligenceLevel.HEURISTIC, graph.derive_tone(Intent.VALIDATION, 1.0), graph.trace, meta={"health_score": score})

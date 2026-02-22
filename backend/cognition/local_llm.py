@@ -1,7 +1,7 @@
 
 import os
 import requests
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 class LocalLLMConnector:
     """
@@ -88,13 +88,15 @@ class LocalLLMConnector:
         if "github" in query:
              return "My acquisition layer allows for direct GitHub indexing. Syntax: `learn from github <username>`. This appends repository metadata to my factual memory (M2)."
 
-        # 4. Contextual Fallback
+        # Final conversational fallback – friendly, not robotic
         return (
-            f"### SYSTEM REFLEX: {message.upper()}\n"
-            "My local inference server (Ollama) is currently unreachable. However, I have processed your input through my **Symbolic Interpretation Layer**.\n\n"
-            "**Verdict**: Input detected as general query. \n"
-            "**Action**: Providing technical system context based on internal architectural schemas.\n\n"
-            "*Technical Note: To unlock full non-technical conversation, ensure a local LLM is running at the configured endpoint.*"
+            "I'm running in **Symbolic Mode** right now — I can analyze your codebase, run architectural audits, "
+            "and compare modules, but general conversation requires a live LLM.\n\n"
+            "To unlock full conversational AI, add your `GOOGLE_API_KEY` to `backend/.env`:\n"
+            "```\nGOOGLE_API_KEY=your_key_here\n```\n"
+            "Get a free key at [aistudio.google.com](https://aistudio.google.com/apikey) and restart the backend. "
+            "Once connected, I'll be able to have full conversations powered by **Gemini 2.0 Flash**.\n\n"
+            "In the meantime, try: `analyze corpus`, `show health`, or `show blueprint`."
         )
 
     def _call_llm(self, user_message: str, history: List[Dict[str, str]] = None, system_prompt: str = None) -> Optional[str]:
