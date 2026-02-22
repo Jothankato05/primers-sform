@@ -14,7 +14,7 @@ class CodeAnalyzer:
         import ast
         
         lines = content.split('\n')
-        result = AnalysisResult(source=source, loc=len(lines))
+        result = AnalysisResult(source=source, loc=len(lines), raw_content=content)
         
         try:
             tree = ast.parse(content)

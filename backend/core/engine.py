@@ -252,7 +252,7 @@ class PrimersEngine:
             self.m3.log_heuristic_result("complexity_heuristic", 0.8) # Mock heuristic name
             
             # Layer 3: Judge
-            judgement = self.judge.assess(interp)
+            judgement = self.judge.assess(interp, analysis.raw_content if hasattr(analysis, "raw_content") else "")
             
             # Phase 5: Persist to M2
             self.m2.save_analysis(analysis.source, {
@@ -305,7 +305,7 @@ class PrimersEngine:
 
         baseline = self.analyzer.get_corpus_stats()
         interp = self.heuristics.interpret(analysis, baseline)
-        judgement = self.judge.assess(interp)
+        judgement = self.judge.assess(interp, analysis.raw_content if hasattr(analysis, "raw_content") else "")
         
         graph.add_step(Intent.PLANNING, "Plan Generation", judgement.confidence_score, "Generated refactor plan")
         
@@ -324,7 +324,13 @@ class PrimersEngine:
         for i, step in enumerate(plan.steps):
             content += f"{i+1}. {step}\n"
             
-        return EngineResponse(content, "plan", judgement.confidence_score, IntelligenceLevel.HEURISTIC, graph.derive_tone(judgement.confidence_score), graph.trace)
+        meta = {
+            "target_file": target_file,
+            "current_code": plan.current_code,
+            "proposed_code": plan.proposed_code
+        }
+            
+        return EngineResponse(content, "plan", judgement.confidence_score, IntelligenceLevel.HEURISTIC, graph.derive_tone(judgement.confidence_score), graph.trace, meta=meta)
 
     def _handle_comparison(self, target_a: str, target_b: str, graph: ReasoningGraph) -> EngineResponse:
         # Resolve targets to AnalysisResults

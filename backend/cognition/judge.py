@@ -7,7 +7,7 @@ class JudgementCore:
     LAYER 3: JUDGMENT
     Formulates human-readable conclusions and recommendations.
     """
-    def assess(self, interpretation: Interpretation) -> Judgement:
+    def assess(self, interpretation: Interpretation, content: str = "") -> Judgement:
         # 1. Formulate Summary
         summary = f"File '{interpretation.source}' acting as {interpretation.role.upper()}."
         if interpretation.relative_complexity > 1.2:
@@ -26,7 +26,7 @@ class JudgementCore:
         
         if interpretation.relative_complexity > 2.0:
             recommendations.append("Immediate refactor recommended.")
-            plan = self._plan_refactor(interpretation)
+            plan = self._plan_refactor(interpretation, content)
         elif interpretation.role == "coordinator":
             recommendations.append("Verify import necessity.")
         else:
@@ -43,7 +43,7 @@ class JudgementCore:
             confidence_score=confidence
         )
 
-    def _plan_refactor(self, interp: Interpretation) -> RefactorPlan:
+    def _plan_refactor(self, interp: Interpretation, content: str = "") -> RefactorPlan:
         steps = []
         if "Mixed Responsibilities" in str(interp.smells):
             steps.append("Extract standalone functions to 'utils.py'")
@@ -52,22 +52,33 @@ class JudgementCore:
         # New AST-based refactor steps
         for smell in interp.smells:
             if "Complex Function" in smell:
-                func_name = smell.split("'")[1]
-                steps.append(f"Break down function '{func_name}' into smaller helper functions.")
+                try:
+                    func_name = smell.split("'")[1]
+                    steps.append(f"Break down function '{func_name}' into smaller helper functions.")
+                except: pass
             if "Large Class" in smell:
-                class_name = smell.split("'")[1]
-                steps.append(f"Apply Extract Class refactoring to '{class_name}'.")
+                try:
+                    class_name = smell.split("'")[1]
+                    steps.append(f"Apply Extract Class refactoring to '{class_name}'.")
+                except: pass
             if "Undocumented" in smell:
                  steps.append("Add docstrings to public API surface.")
 
         if interp.complexity_score > 30 and not steps:
             steps.append("Split file into sub-modules based on import clusters")
 
+        # Simulate proposed code (Symbolic Refactoring)
+        proposed = content
+        if "Add docstrings" in str(steps) and '"""' not in content:
+            proposed = f'"""\nRefactored by Primers Intelligence\nProject: {interp.source}\n"""\n' + content
+
         return RefactorPlan(
             goal=f"Reduce complexity of {interp.source}",
             steps=steps or ["Perform manual audit of dependencies"],
             risk="Medium",
-            expected_gain=f"Complexity -{int((interp.relative_complexity - 1.0)*100/2)}%"
+            expected_gain=f"Complexity -{int((interp.relative_complexity - 1.0)*100/2)}%",
+            current_code=content,
+            proposed_code=proposed
         )
 
     def _calibrate_confidence(self, interp: Interpretation) -> float:

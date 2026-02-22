@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import './App.css'
 import Avatar from './components/Avatar'
 import Mermaid from './components/Mermaid'
+import DiffViewer from './components/DiffViewer'
 
 interface ReasoningStep {
   step_id: string;
@@ -30,6 +31,7 @@ interface Message {
   level?: string;
   tone?: string;
   confidence?: number;
+  meta?: any;
 }
 
 const API_URL = "http://localhost:8000";
@@ -136,7 +138,8 @@ function App() {
         trace: engineRes.trace,
         level: engineRes.level,
         tone: engineRes.tone,
-        confidence: engineRes.confidence
+        confidence: engineRes.confidence,
+        meta: engineRes.meta
       }]);
     } catch {
       setMessages(p => [...p, {
@@ -275,6 +278,15 @@ function App() {
                         <p>{m.content}</p>
                       )}
                     </div>
+
+                    {/* Diff Viewer Integration */}
+                    {m.meta?.current_code && m.meta?.proposed_code && (
+                      <DiffViewer
+                        oldCode={m.meta.current_code}
+                        newCode={m.meta.proposed_code}
+                        fileName={m.meta.target_file}
+                      />
+                    )}
 
                     {/* Meta row */}
                     {m.role === 'assistant' && (m.confidence || (m.trace && m.trace.length > 0)) && (

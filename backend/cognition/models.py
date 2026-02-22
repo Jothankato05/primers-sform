@@ -26,6 +26,7 @@ class AnalysisResult:
     functions: List[FunctionInfo] = field(default_factory=list)
     imports: List[str] = field(default_factory=list)
     loc: int = 0
+    raw_content: str = ""
 
 @dataclass
 class Interpretation:
@@ -41,6 +42,8 @@ class RefactorPlan:
     steps: List[str]
     risk: str # 'Low', 'Medium', 'High'
     expected_gain: str
+    current_code: Optional[str] = None
+    proposed_code: Optional[str] = None
 
 @dataclass
 class Judgement:
