@@ -22,6 +22,7 @@ class Governance:
             "persistent_memory_m2": Capability("persistent_memory_m2", True, "Read/Write to SQLite Knowledge Store"),
             "experience_tracking_m3": Capability("experience_tracking_m3", True, "Update heuristic statistics"),
             "auto_refactor": Capability("auto_refactor", False, "Automatically apply refactor plans (unsafe)"),
+            "external_llm": Capability("external_llm", True, "Fallback to cloud LLM (Gemini) if local is offline"),
         }
         self.version = "3.0.0-alpha"
         self._load_env_overrides()

@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Primers S-Form (Sovereign Intelligence)
 
-Currently, two official plugins are available:
+## Overview
+Primers S-Form is an advanced cognitive engine designed for code intelligence, refactoring, and architectural reasoning. It features a 3-layer cognitive stack (Analysis, Interpretation, Judgment) to "reason" about code structure rather than just processing text.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
+- **Cognitive Stack**:
+  - **Layer 1 (Analysis)**: AST-based parsing for deep code structure extraction.
+  - **Layer 2 (Interpretation)**: Heuristic engine to identify roles (Worker, Coordinator, God Object) and code smells.
+  - **Layer 3 (Judgment)**: Decision making on refactoring needs and risk assessment.
+- **GitHub Learning**: Ability to ingest and learn from user repositories.
+- **Comparative Reasoning**: Compare multiple files for structural complexity.
 
-## React Compiler
+## Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Start the Backend Server
+Windows:
+```bash
+run_backend.bat
+```
+(Or run manually: `python backend/main.py` - ensure dependencies are installed via `pip install -r backend/requirements.txt`)
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Connect with CLI Client
+In a new terminal:
+```bash
+python cli_client.py
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## API Usage
+- **POST /chat**: Send a command or query.
+  - Payload: `{"message": "analyze corpus", "mode": "default"}`
+- **POST /ingest**: Ingest data.
+  - Payload: `{"target": "github", "params": {"username": "octocat"}}`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Key Commands (in CLI)
+- `analyze corpus`: Run heuristic analysis on the local codebase.
+- `compare fileA vs fileB`: Compare two files.
+- `learn from github <username>`: Index repositories for a user.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Local LLM Setup (Ollama)
+This project is designed to work with a local LLM for enhanced reasoning.
+
+1. **Install Ollama**: Download from [ollama.com](https://ollama.com).
+2. **Pull a Model**: Run `ollama pull llama3`.
+3. **Configure**: ensure `backend/.env` points to your Ollama instance (default is `http://localhost:11434/v1/chat/completions`).
+4. **Start Backend**: The engine will automatically detect and use the local LLM if it's running.

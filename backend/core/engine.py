@@ -13,6 +13,7 @@ from cognition.analyzer import CodeAnalyzer
 from cognition.heuristics import HeuristicEngine
 from cognition.judge import JudgementCore
 from cognition.comparator import Comparator
+from cognition.analyst import RepoAnalyst
 
 # Phase 5 Components
 from knowledge.store import KnowledgeStore
@@ -36,6 +37,7 @@ class PrimersEngine:
         self.heuristics = HeuristicEngine() # Layer 2
         self.judge = JudgementCore() # Layer 3
         self.comparator = Comparator()
+        self.repo_analyst = RepoAnalyst() # Structural Intelligence
         
         # Internal Systems
         self.router = IntentRouter()
@@ -69,6 +71,21 @@ class PrimersEngine:
         trace = TraceLog(session_id="current_session")
         graph = ReasoningGraph(trace)
         
+        # Step 0: Record Message to Session (Layer 1 Memory)
+        self.session.add_message("user", input_text)
+        
+        # Step 0.5: Context Retrieval (ChatGPT-like awareness)
+        # Search the knowledge base for topics mentioned in the input
+        graph.add_step(Intent.VALIDATION, "Context_Retrieval", 1.0, "Searching M2 Knowledge Store for relevant entities")
+        context_snippets = self.m2.search_entities(input_text, limit=3)
+        if context_snippets:
+            graph.add_step(Intent.VALIDATION, "Context_Match", 1.0, f"Found {len(context_snippets)} relevant code entities")
+            # Inject context into the temporary prompt context (not saved to session history)
+            context_bonus = "\n\nRelevant Workspace Context:\n" + "\n".join([f"- {s}" for s in context_snippets])
+            input_text_with_context = input_text + context_bonus
+        else:
+            input_text_with_context = input_text
+
         # Step 1: Intent Routing
         intent = self.router.route(input_text)
         graph.add_step(intent, "Routing", 1.0, f"Classified intent as {intent.name}")
@@ -129,20 +146,22 @@ class PrimersEngine:
                 response = self._handle_github_learning(target, graph)
 
         elif intent == Intent.FALLBACK:
-            if self.model: # Cloud Fallback
+            # 1. Cloud Fallback (Gemini) if configured and enabled
+            if self.model and self.gov.is_enabled("external_llm"):
                 graph.add_step(Intent.FALLBACK, "External Call", 0.9, "Routing to Gemini")
                 try:
                     res = self.model.generate_content(input_text)
                     response = EngineResponse(res.text, "external", 0.9, IntelligenceLevel.EXTERNAL, Tone.CAUTIOUS, graph.trace)
                 except Exception as e:
                     graph.add_step(Intent.FALLBACK, "Error", 0.0, f"External failed: {str(e)}")
-                    response = self._local_reflex(input_text, graph)
-            elif self.local_llm.enabled: # Local Chat Fallback
-                graph.add_step(Intent.FALLBACK, "Local LLM Call", 0.5, "Routing to Local Sandboxed LLM")
-                chat_res = self.local_llm.chat(input_text)
-                response = EngineResponse(chat_res, "chat", 0.5, IntelligenceLevel.EXTERNAL, Tone.CAUTIOUS, graph.trace)
-            else:
-                response = self._local_reflex(input_text, graph)
+                    # Continue to local
+            
+            # 2. Local/Simulated Fallback (Sovereign Mode)
+            if not response:
+                graph.add_step(Intent.FALLBACK, "Sovereign Chat", 0.8, "Processing as Sovereign Cognitive Response")
+                # Pass engine context for simulated intelligence
+                chat_res = self.local_llm.chat(input_text_with_context, history=self.session.get_messages())
+                response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
 
         if not response:
              response = self._local_reflex(input_text, graph)
@@ -154,6 +173,7 @@ class PrimersEngine:
             "confidence": response.confidence,
             "response_summary": response.content[:50]
         })
+        self.session.add_message("assistant", response.content)
         self.session.update_confidence(response.confidence)
 
         return response
@@ -183,7 +203,8 @@ class PrimersEngine:
                     try:
                         with open(full_path, "r", encoding="utf-8") as f:
                             content = f.read()
-                            res = self.analyzer.analyze(content, rel_path) # Analyze immediately
+                            res = self.analyzer.analyze(content, rel_path) # Layer 1
+                            self.repo_analyst.analyze_chunk(content, rel_path) # Graph Layer
                             count += 1
                             total_loc += res.loc
                     except Exception as e:
@@ -245,7 +266,17 @@ class PrimersEngine:
 
         avg_conf = overall_confidence / count if count > 0 else 0.5
         
-        graph.add_step(Intent.EMPIRICAL_ANALYSIS, "Judgement", avg_conf, f"Analyzed {count} files with average confidence {avg_conf:.2f}")
+        # Add Graph Insights
+        full_report += "\n### STRUCTURAL INSIGHTS (Knowledge Graph)\n"
+        full_report += self.repo_analyst.get_insights(target)
+        
+        smells = self.repo_analyst.get_smells()
+        if smells:
+            full_report += "\n### ARCHITECTURAL SMELLS\n"
+            for s in smells:
+                full_report += f"- {s}\n"
+
+        graph.add_step(Intent.EMPIRICAL_ANALYSIS, "Graph Synthesis", avg_conf, f"Synthesized {len(smells)} structural smells")
 
         # Phase 5: Local LLM Summary if enabled
         if self.local_llm.enabled:
@@ -357,6 +388,15 @@ class PrimersEngine:
         # Optionally show first few
         preview = self.github.get_knowledge()[:3]
         for chunk in preview:
-             summary += f"- {chunk}\n"
+             try:
+                 # Check if it's a dict string from our new connector
+                 import ast
+                 data = ast.literal_eval(chunk) if isinstance(chunk, str) and chunk.startswith('{') else chunk
+                 if isinstance(data, dict):
+                     summary += f"- **{data.get('source')}**: {data.get('description')} (Stack: {data.get('tech_stack')})\n"
+                 else:
+                     summary += f"- {chunk}\n"
+             except:
+                 summary += f"- {chunk}\n"
              
         return EngineResponse(summary, "knowledge", 1.0, IntelligenceLevel.EXTERNAL, Tone.ASSERTIVE, graph.trace)

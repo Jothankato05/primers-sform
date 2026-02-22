@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
 import './App.css'
-
-
+import Avatar from './components/Avatar'
 
 interface ReasoningStep {
   step_id: string;
@@ -23,7 +23,7 @@ interface EngineResponse {
 
 interface Message {
   id: string;
-  role: 'user' | 'system';
+  role: 'user' | 'assistant';
   content: string;
   trace?: ReasoningStep[];
   level?: string;
@@ -33,149 +33,282 @@ interface Message {
 
 const API_URL = "http://localhost:8000";
 
+const SUGGESTIONS = [
+  { label: "Analyze codebase", prompt: "analyze corpus" },
+  { label: "Review engine", prompt: "review engine.py" },
+  { label: "Compare modules", prompt: "compare engine.py vs judge.py" },
+  { label: "Explain architecture", prompt: "explain your architecture" },
+];
+
+// Simple icon components
+const PIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <rect width="28" height="28" rx="6" fill="url(#pGrad)" />
+    <defs>
+      <linearGradient id="pGrad" x1="0" y1="0" x2="28" y2="28">
+        <stop stopColor="#404040" />
+        <stop offset="1" stopColor="#171717" />
+      </linearGradient>
+    </defs>
+    <text x="7" y="20" fill="#d4d4d4" fontSize="14" fontWeight="700" fontFamily="'Inter', sans-serif">P</text>
+  </svg>
+);
+
+const UserIcon = () => (
+  <div className="avatar-bubble user-bubble">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  </div>
+);
+
+const AIIcon = () => (
+  <div className="avatar-bubble ai-bubble">
+    <PIcon />
+  </div>
+);
+
 function App() {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 'init', role: 'system', content: 'PrimersGPT System Online. version 3.0.0 (Phase 5)' }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [showTrace, setShowTrace] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const send = async () => {
-    if (!input.trim()) return;
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input };
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + 'px';
+    }
+  }, [input]);
+
+  const send = async (overrideText?: string) => {
+    const textToSend = (overrideText || input).trim();
+    if (!textToSend) return;
+
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: textToSend };
     setMessages(p => [...p, userMsg]);
-    setInput('');
+    if (!overrideText) setInput('');
     setLoading(true);
 
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg.content })
+        body: JSON.stringify({ message: textToSend })
       });
       const data = await res.json();
       const engineRes: EngineResponse = data.response;
 
       setMessages(p => [...p, {
         id: Date.now().toString(),
-        role: 'system',
+        role: 'assistant',
         content: engineRes.content,
         trace: engineRes.trace,
         level: engineRes.level,
         tone: engineRes.tone,
         confidence: engineRes.confidence
       }]);
-    } catch (e) {
-      setMessages(p => [...p, { id: Date.now().toString(), role: 'system', content: 'CONNECTION ERROR: Backend unreachable.' }]);
+    } catch {
+      setMessages(p => [...p, {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'Unable to reach the Primers Intelligence backend. Please ensure the server is running.'
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleIngest = async () => {
-    const user = prompt("GitHub Username for Knowledge Graph:");
-    if (!user) return;
-    setMessages(p => [...p, { id: 'sys', role: 'system', content: `Creating ingestion task for user: ${user}...` }]);
-
-    try {
-      const res = await fetch(`${API_URL}/ingest`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target: 'github', params: { username: user } })
-      });
-      const data = await res.json();
-      setMessages(p => [...p, { id: Date.now().toString(), role: 'system', content: data.message }]);
-    } catch (e) {
-      setMessages(p => [...p, { id: 'err', role: 'system', content: 'Ingestion Failed.' }]);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
     }
   };
 
+  const newSession = () => {
+    setMessages([]);
+    setInput('');
+    setShowTrace(null);
+  };
+
+  const isEmpty = messages.length === 0;
+
   return (
-    <div className="layout">
-      <div className="bg-grid"></div>
-
-      {/* Sidebar */}
+    <div className="app">
+      {/* ── Sidebar ── */}
       <aside className="sidebar">
+        {/* Brand */}
         <div className="brand">
-          <img src="/logo.jpg" className="brand-logo" alt="" />
-          <div className="brand-text">
-            <h1>PRIMERS</h1>
-            <span className="subtitle">INTELLIGENCE</span>
-          </div>
+          <PIcon />
+          <span className="brand-name">Primers Intelligence</span>
         </div>
 
-        <div className="nav-menu">
-          <div className="nav-item active">
-            <img src="/node_icon.png" className="icon" /> Neural Core
+        {/* New Chat */}
+        <button className="new-chat-btn" onClick={newSession}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+          New Chat
+        </button>
+
+        {/* Recents */}
+        {messages.filter(m => m.role === 'user').length > 0 && (
+          <div className="sidebar-section">
+            <div className="section-label">Recent</div>
+            {messages.filter(m => m.role === 'user').slice(-6).reverse().map(m => (
+              <button key={m.id} className="history-btn" onClick={() => send(m.content)}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                {m.content.length > 28 ? m.content.slice(0, 26) + '…' : m.content}
+              </button>
+            ))}
           </div>
-          <div className="nav-item" onClick={handleIngest}>
-            <img src="/node_icon.png" className="icon" /> Ingest Data
-          </div>
+        )}
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Avatar */}
+        <div className="sidebar-avatar">
+          <Avatar isTyping={input.length > 0} isResponding={loading} mousePos={mousePos} />
         </div>
 
-        <div className="sys-status">
-          <div className="stat-row">
-            <span>CPU</span>
-            <div className="bar"><div className="fill" style={{ width: '24%' }}></div></div>
-          </div>
-          <div className="stat-row">
-            <span>MEM</span>
-            <div className="bar"><div className="fill" style={{ width: '41%' }}></div></div>
+        {/* Status */}
+        <div className="sidebar-footer">
+          <div className="status-row">
+            <span className="status-dot" />
+            <span>Inference Ready</span>
           </div>
         </div>
       </aside>
 
-      {/* Main Terminal */}
-      <main className="main-view">
-        <div className="chat-window">
-          {messages.map(m => (
-            <div key={m.id} className={`msg-row ${m.role}`}>
-              <div className="msg-content">
-                <div className="msg-header">
-                  <span className="sender">{m.role === 'user' ? 'USR' : 'SYS'} //</span>
-                  {m.tone && <span className={`tone-badge ${m.tone}`}>{m.tone.toUpperCase()}</span>}
-                  {m.confidence && <span className="conf-badge">CONF: {m.confidence.toFixed(2)}</span>}
-                </div>
+      {/* ── Main ── */}
+      <main className="main">
+        {/* Header */}
+        <header className="topbar">
+          <span className="topbar-title">Primers Intelligence</span>
+          <div className="topbar-right">
+            <span className="model-badge">v3.0</span>
+          </div>
+        </header>
 
-                <div className="msg-text">{m.content}</div>
-
-                {/* Trace Display */}
-                {m.trace && m.trace.length > 0 && (
-                  <div className="trace-box">
-                    <div className="trace-header">REASONING GRAPH [{m.level || 'Unknown'}]</div>
-                    {m.trace.map((t) => (
-                      <div key={t.step_id} className="trace-line">
-                        <span className="trace-intent">[{t.intent}]</span>
-                        <span className="trace-action">{t.action}</span>
-                        <span className="trace-summary">: {t.output_summary}</span>
-                        <span className="trace-conf">({t.confidence.toFixed(2)})</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+        {/* Chat or Empty State */}
+        <div className="chat-area">
+          {isEmpty ? (
+            <div className="empty-state">
+              <div className="empty-icon"><PIcon /></div>
+              <h2 className="empty-title">Primers Intelligence</h2>
+              <p className="empty-sub">Your intelligent code-architecture assistant. Ask anything.</p>
+              <div className="suggestion-grid">
+                {SUGGESTIONS.map(s => (
+                  <button key={s.prompt} className="suggestion-card" onClick={() => send(s.prompt)}>
+                    <span className="suggestion-label">{s.label}</span>
+                    <span className="suggestion-prompt">{s.prompt}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
-          {loading && <div className="msg-row system"><div className="msg-content">PROCESSING...</div></div>}
-          <div ref={endRef} />
+          ) : (
+            <div className="messages">
+              {messages.map(m => (
+                <div key={m.id} className={`message-row ${m.role}`}>
+                  {m.role === 'assistant' ? <AIIcon /> : <UserIcon />}
+                  <div className="message-body">
+                    <div className="message-text">
+                      {m.role === 'assistant' ? (
+                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                      ) : (
+                        <p>{m.content}</p>
+                      )}
+                    </div>
+
+                    {/* Meta row */}
+                    {m.role === 'assistant' && (m.confidence || (m.trace && m.trace.length > 0)) && (
+                      <div className="message-meta">
+                        {m.confidence && (
+                          <span className="meta-chip">
+                            {(m.confidence * 100).toFixed(0)}% confidence
+                          </span>
+                        )}
+                        {m.tone && <span className={`meta-chip tone-${m.tone}`}>{m.tone}</span>}
+                        {m.trace && m.trace.length > 0 && (
+                          <button className="trace-toggle" onClick={() => setShowTrace(showTrace === m.id ? null : m.id)}>
+                            {showTrace === m.id ? 'Hide' : 'Show'} reasoning
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Trace */}
+                    {showTrace === m.id && m.trace && (
+                      <div className="trace-panel">
+                        <div className="trace-panel-title">Reasoning Graph · {m.level}</div>
+                        {m.trace.map(t => (
+                          <div key={t.step_id} className="trace-row">
+                            <span className="trace-tag">{t.intent}</span>
+                            <span className="trace-desc">{t.action}: {t.output_summary}</span>
+                            <span className="trace-score">{(t.confidence * 100).toFixed(0)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {loading && (
+                <div className="message-row assistant">
+                  <AIIcon />
+                  <div className="message-body">
+                    <div className="typing-indicator">
+                      <span /><span /><span />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={endRef} />
+            </div>
+          )}
         </div>
 
-        <div className="input-deck">
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && send()}
-            placeholder="ENTER COMMAND (e.g. 'review repo', 'analyze core')..."
-          />
+        {/* Input */}
+        <div className="input-area">
+          <div className="input-box">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Ask Primers Intelligence anything..."
+            />
+            <button
+              className={`send-btn ${input.trim() ? 'active' : ''}`}
+              onClick={() => send()}
+              disabled={!input.trim() && !loading}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
+          </div>
+          <p className="input-hint">Enter to send · Shift + Enter for new line</p>
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

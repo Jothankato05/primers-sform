@@ -53,3 +53,45 @@ class KnowledgeStore:
             cursor.execute("SELECT analysis_blob FROM repo_analysis WHERE source_name = ?", (source_name,))
             row = cursor.fetchone()
             return json.loads(row[0]) if row else None
+
+    def search_entities(self, query: str, limit: int = 3) -> List[str]:
+        """
+        Keyword-based retrieval from M2. Optimized to use SQL filters.
+        """
+        if not self.enabled: return []
+        
+        results = []
+        words = [w for w in query.lower().split() if len(w) > 2] # Filter short noise words
+        if not words: return []
+
+        try:
+            with sqlite3.connect(self.db_path, timeout=5) as conn:
+                cursor = conn.cursor()
+                # 1. Search by source_name (file paths)
+                for word in words:
+                    cursor.execute(
+                        "SELECT source_name, analysis_blob FROM repo_analysis WHERE source_name LIKE ? LIMIT ?", 
+                        (f"%{word}%", limit)
+                    )
+                    for row in cursor.fetchall():
+                        source, blob_str = row
+                        results.append(f"Entity: {source} | Stats: {blob_str[:150]}...")
+                        if len(results) >= limit: break
+                    if len(results) >= limit: break
+                
+                # 2. Search by content (simplified) if still need more results
+                if len(results) < limit:
+                    for word in words:
+                        cursor.execute(
+                            "SELECT source_name, analysis_blob FROM repo_analysis WHERE analysis_blob LIKE ? LIMIT ?", 
+                            (f"%{word}%", limit - len(results))
+                        )
+                        for row in cursor.fetchall():
+                            source, _ = row
+                            results.append(f"Context Match: Reference found in {source}")
+                            if len(results) >= limit: break
+                        if len(results) >= limit: break
+        except Exception as e:
+            print(f"Search Entities Error: {e}")
+            
+        return results

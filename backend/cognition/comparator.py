@@ -10,14 +10,15 @@ class Comparator:
         diffs = []
         
         # 1. Complexity Comparison
-        comp_a = len(analysis_a.classes) + len(analysis_a.functions) + len(analysis_a.imports)
-        comp_b = len(analysis_b.classes) + len(analysis_b.functions) + len(analysis_b.imports)
+        # Recalculate based on new model structure
+        comp_a = len(analysis_a.imports) + sum(f.complexity for f in analysis_a.functions) + sum(len(c.methods) for c in analysis_a.classes)
+        comp_b = len(analysis_b.imports) + sum(f.complexity for f in analysis_b.functions) + sum(len(c.methods) for c in analysis_b.classes)
         
         delta = 0.0
         if comp_a > 0:
             delta = ((comp_b - comp_a) / comp_a) * 100
         
-        diffs.append(DiffPoint("Complexity", float(comp_a), float(comp_b), delta))
+        diffs.append(DiffPoint("Complexity (Structural)", float(comp_a), float(comp_b), delta))
         
         # 2. Structure Comparison
         loc_delta = 0.0

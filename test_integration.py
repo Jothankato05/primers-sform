@@ -28,7 +28,13 @@ def test_system():
     # Compare two known files
     # Note: filenames in raw_data are relative to ingested path
     # e.g. "core/engine.py" vs "cognition/comparator.py"
-    resp = engine.process("compare core/engine.py vs cognition/comparator.py")
+    # On Windows, relpath uses backslashes
+    import os
+    sep = os.sep
+    file_a = f"core{sep}engine.py"
+    file_b = f"cognition{sep}comparator.py"
+    
+    resp = engine.process(f"compare {file_a} vs {file_b}")
     print(f"[{resp.intent}] {resp.content}")
 
     print("\n--- TEST 4: GITHUB LEARNING ---")

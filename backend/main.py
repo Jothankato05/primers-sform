@@ -20,6 +20,12 @@ app.add_middleware(
 
 engine = PrimersEngine()
 
+# Phase 5: Auto-Ingest current directory on startup
+@app.on_event("startup")
+async def startup_event():
+    print("Initial Scan: Ingesting local workspace...")
+    engine.process("ingest .")
+
 class ChatRequest(BaseModel):
     message: str
     mode: str = "default"
@@ -44,8 +50,11 @@ async def ingest_endpoint(request: IngestRequest):
         username = request.params.get("username")
         if not username:
              raise HTTPException(400, "Username required")
-        res = engine.learn_from_github(username)
-        return {"status": "success", "message": res}
+        
+        # Route through the core engine process
+        response_obj = engine.process(f"learn from github {username}")
+        return {"status": "success", "response": response_obj.to_dict()}
+    
     return {"status": "error", "message": "Unknown target"}
 
 if __name__ == "__main__":

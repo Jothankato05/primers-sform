@@ -49,7 +49,18 @@ class JudgementCore:
             steps.append("Extract standalone functions to 'utils.py'")
             steps.append("Separate classes into distinct files")
         
-        if interp.complexity_score > 30:
+        # New AST-based refactor steps
+        for smell in interp.smells:
+            if "Complex Function" in smell:
+                func_name = smell.split("'")[1]
+                steps.append(f"Break down function '{func_name}' into smaller helper functions.")
+            if "Large Class" in smell:
+                class_name = smell.split("'")[1]
+                steps.append(f"Apply Extract Class refactoring to '{class_name}'.")
+            if "Undocumented" in smell:
+                 steps.append("Add docstrings to public API surface.")
+
+        if interp.complexity_score > 30 and not steps:
             steps.append("Split file into sub-modules based on import clusters")
 
         return RefactorPlan(

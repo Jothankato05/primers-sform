@@ -7,10 +7,9 @@ class GitHubConnector:
 
     def index_user_repos(self, username: str, token: str = None) -> int:
         """
-        Fetches all public repos for a user.
-        If token is provided, can fetch private ones too (rate limit higher).
+        Fetches all public repos for a user and gathers deeper metadata.
         """
-        headers = {}
+        headers = {"Accept": "application/vnd.github.v3+json"}
         if token:
             headers["Authorization"] = f"token {token}"
         
@@ -23,15 +22,28 @@ class GitHubConnector:
                 
             repos = response.json()
             count = 0
-            for repo in repos:
-                # For this MVP, we just store the description and name.
-                # A full system would clone and read files.
-                desc = repo.get("description", "No description")
+            # Limit to top 5 repos for MVP performance
+            for repo in repos[:5]:
                 name = repo.get("name")
-                language = repo.get("language")
+                desc = repo.get("description", "No description")
+                lang = repo.get("language", "Unknown")
                 
-                knowledge_chunk = f"Repository: {name} | Language: {language} | Info: {desc}"
-                self.data_store.append(knowledge_chunk)
+                # 1. Get README if possible
+                readme_url = f"https://api.github.com/repos/{username}/{name}/readme"
+                readme_content = ""
+                r_res = requests.get(readme_url, headers=headers)
+                if r_res.status_code == 200:
+                    import base64
+                    readme_content = base64.b64decode(r_res.json()["content"]).decode('utf-8', errors='ignore')[:500]
+                
+                knowledge_chunk = {
+                    "source": f"github/{username}/{name}",
+                    "tech_stack": lang,
+                    "description": desc,
+                    "readme_preview": readme_content.replace("\n", " ")
+                }
+                
+                self.data_store.append(str(knowledge_chunk))
                 count += 1
             
             return count

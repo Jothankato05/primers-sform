@@ -13,8 +13,14 @@ class Intent(Enum):
 
 class IntentRouter:
     def route(self, user_input: str) -> Intent:
-        normalized = user_input.lower()
+        normalized = user_input.lower().strip()
         
+        # Priority 0: Conversational Fillers (Always Fallback)
+        fillers = ["hey", "hello", "hi", "how are you", "who are you", "good morning"]
+        if any(normalized == f or normalized.startswith(f + " ") for f in fillers):
+            return Intent.FALLBACK
+
+        # Priority 1: Technical Commands
         if "compare" in normalized or "vs" in normalized:
             return Intent.COMPARATIVE_REASONING
         if "plan" in normalized and "refactor" in normalized:
