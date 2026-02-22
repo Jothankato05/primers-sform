@@ -105,10 +105,31 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const [isIdle, setIsIdle] = useState(false);
+  const idleTimerRef = useRef<any>(null);
+
+  const resetIdle = () => {
+    setIsIdle(false);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => setIsIdle(true), 10000); // 10s idle
+  };
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      resetIdle();
+    };
+    const handleKeyDown = () => resetIdle();
+
     window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('keydown', handleKeyDown);
+    resetIdle();
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('keydown', handleKeyDown);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -210,7 +231,7 @@ function App() {
 
         {/* Avatar Section */}
         <div className="avatar-section" style={{ padding: '2rem 1rem', display: 'flex', justifyContent: 'center' }}>
-          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} />
+          <Avatar isTyping={isTyping} isResponding={loading} mousePos={mousePos} isIdle={isIdle} />
         </div>
 
         {/* Status */}
