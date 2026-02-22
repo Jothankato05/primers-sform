@@ -145,6 +145,11 @@ class PrimersEngine:
             else:
                 response = self._handle_github_learning(target, graph)
 
+        elif "show blueprint" in input_text.lower():
+            graph.add_step(Intent.EMPIRICAL_ANALYSIS, "Graph Assembly", 1.0, "Generating architectural blueprint")
+            blueprint = self.repo_analyst.get_blueprint()
+            response = EngineResponse(f"### ARCHITECTURAL BLUEPRINT\n{blueprint}", "analysis", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
+
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled
             if self.model and self.gov.is_enabled("external_llm"):

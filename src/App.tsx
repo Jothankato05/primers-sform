@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import './App.css'
 import Avatar from './components/Avatar'
+import Mermaid from './components/Mermaid'
 
 interface ReasoningStep {
   step_id: string;
@@ -75,8 +76,23 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showTrace, setShowTrace] = useState<string | null>(null);
+  const [stats, setStats] = useState({ cpu: 12, memory: 24, knowledge_nodes: 0, uptime: '0h 0m', intelligence_mode: '...' });
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch Stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${API_URL}/stats`);
+        const data = await res.json();
+        setStats(data);
+      } catch (e) { console.error("Stats fetch failed", e); }
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
@@ -189,7 +205,17 @@ function App() {
         <div className="sidebar-footer">
           <div className="status-row">
             <span className="status-dot" />
-            <span>Inference Ready</span>
+            <span>{stats.intelligence_mode}</span>
+          </div>
+          <div className="stats-grid" style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="stat-box">
+              <div className="stat-label">Knowledge</div>
+              <div className="stat-value">{stats.knowledge_nodes} nodes</div>
+            </div>
+            <div className="stat-box">
+              <div className="stat-label">Uptime</div>
+              <div className="stat-value">{stats.uptime}</div>
+            </div>
           </div>
         </div>
       </aside>
@@ -228,7 +254,23 @@ function App() {
                   <div className="message-body">
                     <div className="message-text">
                       {m.role === 'assistant' ? (
-                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                        <ReactMarkdown
+                          components={{
+                            code({ className, children, ...props }) {
+                              const match = /language-mermaid/.exec(className || '');
+                              const isBlock = className && className.startsWith('language-');
+                              return isBlock && match ? (
+                                <Mermaid chart={String(children).replace(/\n$/, '')} />
+                              ) : (
+                                <code className={className} {...props}>
+                                  {children}
+                                </code>
+                              );
+                            }
+                          }}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
                       ) : (
                         <p>{m.content}</p>
                       )}

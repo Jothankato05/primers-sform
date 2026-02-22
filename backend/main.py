@@ -57,5 +57,23 @@ async def ingest_endpoint(request: IngestRequest):
     
     return {"status": "error", "message": "Unknown target"}
 
+@app.get("/stats")
+async def get_stats():
+    # Knowledge stats
+    with sqlite3.connect("primers_knowledge.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM repo_analysis")
+        knowledge_nodes = cursor.fetchone()[0]
+    
+    # Simple simulated load for demo, or real if we add psuil
+    # For now, let's provide knowledge breadcrumbs
+    return {
+        "cpu": 12, # Static for now
+        "memory": 24, # Static for now
+        "knowledge_nodes": knowledge_nodes,
+        "uptime": "3h 42m",
+        "intelligence_mode": "SYMBOLIC_FALLBACK"
+    }
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -512,6 +512,26 @@ button {
 }
 
 /* ── Avatar Overrides ── */
+.stat-box {
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
 .sidebar-avatar .avatar-svg {
   width: 140px;
   height: 140px;
