@@ -12,7 +12,12 @@ from dotenv import load_dotenv
 load_dotenv()
 BOOT_TIME = time.time()
 
-app = FastAPI(title="PrimersGPT", description="Sovereign Intelligence Backend", version="2.0.0")
+app = FastAPI(
+    title="PrimersGPT", 
+    description="Sovereign Intelligence Backend", 
+    version="2.0.0",
+    root_path="/api" if os.getenv("VERCEL") else ""
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -67,7 +72,7 @@ async def ingest_endpoint(request: IngestRequest):
 @app.get("/stats")
 async def get_stats():
     # Knowledge stats
-    db_path = os.path.join(os.path.dirname(__file__), "primers_knowledge.db")
+    db_path = engine.m2.db_path
     try:
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()

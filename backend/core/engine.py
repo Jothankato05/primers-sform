@@ -113,7 +113,7 @@ class PrimersEngine:
         elif intent == Intent.PLANNING:
             target_file = input_text.split("refactor")[-1].strip()
             response = self._handle_refactor_plan(target_file, graph)
-            
+            C 
         elif intent == Intent.COMPARATIVE_REASONING:
             parts = input_text.lower().replace("compare", "").split("vs")
             if len(parts) == 2:

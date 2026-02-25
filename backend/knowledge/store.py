@@ -2,13 +2,28 @@
 import sqlite3
 import json
 import hashlib
-from typing import Dict, Optional, Any
+import os
+from typing import Dict, Optional, Any, List
 from datetime import datetime
 
 class KnowledgeStore:
     def __init__(self, db_path: str = "primers_knowledge.db", enabled: bool = True):
         self.enabled = enabled
-        self.db_path = db_path
+        
+        # Vercel fix: Use /tmp for writeable database
+        if os.getenv("VERCEL"):
+            import shutil
+            tmp_path = os.path.join("/tmp", db_path)
+            # Copy existing DB to /tmp if it exists in the repo
+            if os.path.exists(db_path) and not os.path.exists(tmp_path):
+                try:
+                    shutil.copy2(db_path, tmp_path)
+                except:
+                    pass
+            self.db_path = tmp_path
+        else:
+            self.db_path = db_path
+            
         if enabled:
             self._init_db()
 

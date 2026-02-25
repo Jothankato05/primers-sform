@@ -13,21 +13,37 @@ class ExperienceMonitor:
     def __init__(self, enabled: bool = True):
         self.enabled = enabled
         self.stats: Dict[str, Dict[str, Any]] = {}
+        
+        # Vercel fix: Use /tmp for writeable JSON
+        self.exp_file = EXP_FILE
+        if os.getenv("VERCEL"):
+            tmp_file = os.path.join("/tmp", EXP_FILE)
+            if os.path.exists(EXP_FILE) and not os.path.exists(tmp_file):
+                import shutil
+                try:
+                    shutil.copy2(EXP_FILE, tmp_file)
+                except:
+                    pass
+            self.exp_file = tmp_file
+            
         if self.enabled:
             self._load()
 
     def _load(self):
-        if os.path.exists(EXP_FILE):
+        if os.path.exists(self.exp_file):
             try:
-                with open(EXP_FILE, 'r') as f:
+                with open(self.exp_file, 'r') as f:
                     self.stats = json.load(f)
             except:
                 self.stats = {}
 
     def _save(self):
         if not self.enabled: return
-        with open(EXP_FILE, 'w') as f:
-            json.dump(self.stats, f, indent=2)
+        try:
+            with open(self.exp_file, 'w') as f:
+                json.dump(self.stats, f, indent=2)
+        except:
+            pass # Silent failure on read-only environments if /tmp fails
 
     def log_heuristic_result(self, heuristic_name: str, confidence: float, confirmed: bool = True):
         """
