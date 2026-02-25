@@ -62,6 +62,18 @@ class LocalLLMConnector:
         # 🧠 SYMBOLIC INTELLIGENCE (LLM-OFFLINE REASONING)
         query = message.lower()
         
+        # SELF-EVOLUTION: Prioritize learned context if passed in
+        if "learned knowledge" in query:
+            # Extract the response part from the learned context
+            try:
+                # Basic heuristic to extract the last learned response
+                learned_segment = message.split("Learned Knowledge from past interactions:")[-1]
+                if "Response:" in learned_segment:
+                    best_response = learned_segment.split("Response:")[-1].strip()
+                    return f"### COGNITIVE RECALL\nBased on my evolving memory of our interactions, I have found a relevant pattern:\n\n{best_response}"
+            except:
+                pass
+
         # Knowledge about S-Form
         if any(k in query for k in ["what is", "who are you", "primers intelligence"]):
             return (

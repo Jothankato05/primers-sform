@@ -113,7 +113,6 @@ class PrimersEngine:
         elif intent == Intent.PLANNING:
             target_file = input_text.split("refactor")[-1].strip()
             response = self._handle_refactor_plan(target_file, graph)
-            C 
         elif intent == Intent.COMPARATIVE_REASONING:
             parts = input_text.lower().replace("compare", "").split("vs")
             if len(parts) == 2:
@@ -204,7 +203,16 @@ class PrimersEngine:
             # 2. Local Sovereign Mode (Ollama offline fallback)
             if not response:
                 graph.add_step(Intent.FALLBACK, "Sovereign Chat", 0.8, "Processing via Symbolic Reasoning")
-                chat_res = self.local_llm.chat(input_text_with_context, history=self.session.get_messages())
+                
+                # SELF-EVOLUTION: Search for similar past interactions first
+                learned = self.m2.search_interactions(input_text)
+                learned_context = ""
+                if learned:
+                    graph.add_step(Intent.FALLBACK, "Pattern_Match", 0.9, f"Found {len(learned)} learned patterns")
+                    learned_context = "\n\nLearned Knowledge from past interactions:\n" + \
+                        "\n".join([f"- Previous Query: {l['query']}\n  Response: {l['response']}" for l in learned])
+                
+                chat_res = self.local_llm.chat(input_text_with_context + learned_context, history=self.session.get_messages())
                 response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
 
         if not response:
@@ -219,6 +227,10 @@ class PrimersEngine:
         })
         self.session.add_message("assistant", response.content)
         self.session.update_confidence(response.confidence)
+
+        # Phase 5+: SELF-EVOLUTION - Store successful interactions in M2
+        if response.confidence > 0.6 and intent != Intent.FALLBACK:
+            self.m2.save_interaction(input_text, response.content, response.confidence)
 
         return response
 

@@ -52,7 +52,53 @@ class KnowledgeStore:
                     health_score INTEGER
                 )
             """)
+            # M2 Interactions: Self-Learning from User input
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS interactions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    query TEXT,
+                    response TEXT,
+                    timestamp TEXT,
+                    confidence REAL
+                )
+            """)
             conn.commit()
+
+    def save_interaction(self, query: str, response: str, confidence: float):
+        if not self.enabled: return
+        timestamp = datetime.now().isoformat()
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO interactions (query, response, timestamp, confidence)
+                    VALUES (?, ?, ?, ?)
+                """, (query, response, timestamp, confidence))
+                conn.commit()
+        except Exception as e:
+            print(f"Failed to save interaction: {e}")
+
+    def search_interactions(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
+        if not self.enabled: return []
+        results = []
+        words = [w for w in query.lower().split() if len(w) > 3]
+        if not words: return []
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                for word in words:
+                    cursor.execute("""
+                        SELECT query, response, confidence FROM interactions 
+                        WHERE query LIKE ? AND confidence > 0.5
+                        ORDER BY confidence DESC LIMIT ?
+                    """, (f"%{word}%", limit))
+                    for row in cursor.fetchall():
+                        results.append({"query": row[0], "response": row[1], "confidence": row[2]})
+                    if len(results) >= limit: break
+        except Exception as e:
+            print(f"Failed to search interactions: {e}")
+        return results
 
     def save_analysis(self, source: str, metrics: Dict[str, Any]):
         if not self.enabled: return
