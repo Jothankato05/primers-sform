@@ -100,15 +100,14 @@ class LocalLLMConnector:
         if "github" in query:
              return "My acquisition layer allows for direct GitHub indexing. Syntax: `learn from github <username>`. This appends repository metadata to my factual memory (M2)."
 
-        # Final conversational fallback – friendly, not robotic
+        # Final conversational fallback – Sovereign & Self-Evolving
         return (
-            "I'm running in **Symbolic Mode** right now — I can analyze your codebase, run architectural audits, "
-            "and compare modules, but general conversation requires a live LLM.\n\n"
-            "To unlock full conversational AI, add your `GOOGLE_API_KEY` to `backend/.env`:\n"
-            "```\nGOOGLE_API_KEY=your_key_here\n```\n"
-            "Get a free key at [aistudio.google.com](https://aistudio.google.com/apikey) and restart the backend. "
-            "Once connected, I'll be able to have full conversations powered by **Gemini 2.0 Flash**.\n\n"
-            "In the meantime, try: `analyze corpus`, `show health`, or `show blueprint`."
+            "I am currently operating in **Sovereign Symbolic Mode**. My intelligence is derived from your codebase, "
+            "architectural heuristics, and our past interactions.\n\n"
+            "While I am not connected to a cloud LLM, I am **learning and evolving** with every command you send. "
+            "I index successful patterns and store them in my M2 Persistent Memory.\n\n"
+            "**To teach me directly, use the syntax**: `teach: [your fact or response]`\n\n"
+            "Current active commands: `analyze corpus`, `show health`, `show blueprint`, `compare <A> vs <B>`."
         )
 
     def _call_llm(self, user_message: str, history: List[Dict[str, str]] = None, system_prompt: str = None) -> Optional[str]:

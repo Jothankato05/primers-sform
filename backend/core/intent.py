@@ -9,6 +9,7 @@ class Intent(Enum):
     VALIDATION = auto()
     INGESTION = auto()
     KNOWLEDGE_ACQUISITION = auto()
+    TEACHING = auto()
     FALLBACK = auto()
 
 class IntentRouter:
@@ -16,6 +17,9 @@ class IntentRouter:
         normalized = user_input.lower().strip()
         
         # Priority 0: Conversational Fillers (Always Fallback)
+        if normalized.startswith("teach:"):
+            return Intent.TEACHING
+
         fillers = ["hey", "hello", "hi", "how are you", "who are you", "good morning"]
         if any(normalized == f or normalized.startswith(f + " ") for f in fillers):
             return Intent.FALLBACK

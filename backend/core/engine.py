@@ -175,6 +175,19 @@ class PrimersEngine:
             else:
                 response = EngineResponse("No significant architectural debt detected currently.", "info", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CALM, graph.trace)
 
+        elif intent == Intent.TEACHING:
+            knowledge = input_text.split("teach:")[-1].strip()
+            if knowledge:
+                self.m2.save_interaction(knowledge, knowledge, 1.0) # Self-referential teaching
+                graph.add_step(Intent.TEACHING, "Memory Update", 1.0, "Writing new pattern to Sovereign Memory")
+                response = EngineResponse(
+                    "### ACQUISITION SUCCESSFUL\nI have integrated this pattern into my Sovereign Memory. "
+                    "In future cycles, my reasoning will be informed by this knowledge.", 
+                    "knowledge", 1.0, IntelligenceLevel.SYMBOLIC, Tone.ASSERTIVE, graph.trace
+                )
+            else:
+                response = EngineResponse("Incomplete teaching sequence. Usage: `teach: [fact]`.", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
+
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled
             if self.model and self.gov.is_enabled("external_llm"):
