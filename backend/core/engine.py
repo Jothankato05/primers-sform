@@ -553,6 +553,14 @@ class PrimersEngine:
         Scans all projects in the sibling 'scratch' directory.
         This enables 'Global Intelligence' across the entire user workspace.
         """
+        if os.getenv("VERCEL"):
+            return EngineResponse(
+                "### ☁️ CLOUD SYNC UNAVAILABLE\n"
+                "The Global Ecosystem Sync requires access to your local filesystem baseline. "
+                "Please run Primers Intelligence **locally** using `run_backend.bat` to sync across workspace projects.",
+                "info", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace
+            )
+
         graph.add_step(Intent.KNOWLEDGE_ACQUISITION, "Global Scan", 1.0, "Traversing workspace projects")
         
         # Determine scratch root

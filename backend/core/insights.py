@@ -3,6 +3,7 @@ import os
 import json
 from datetime import datetime
 from typing import Dict, Any, List
+from core.guardrails import SovereignGuardrails
 
 class ExecutiveInsights:
     """
@@ -11,6 +12,7 @@ class ExecutiveInsights:
     """
     def __init__(self, m2_store):
         self.m2 = m2_store
+        self.guardrails = SovereignGuardrails()
 
     def generate_report(self) -> Dict[str, Any]:
         """
@@ -41,12 +43,17 @@ class ExecutiveInsights:
                     projects.add(parts[1])
         
         ecosystem_depth = len(projects) if projects else 1
+        
+        # 6. Global Compliance
+        violations = self.guardrails.audit_workspace(analyses)
+        compliance_score = max(0, 100 - (len(violations) * 2))
 
         return {
             "timestamp": datetime.now().isoformat(),
             "metrics": {
                 "total_structural_units": total_nodes,
                 "project_ecosystem_depth": ecosystem_depth,
+                "global_compliance_rating": f"{compliance_score}%",
                 "architectural_health": max(0, 100 - (debt_score / 10)),
                 "technical_debt_cost": estimated_cost,
                 "velocity_risk": "HIGH" if debt_score > 500 else "STABLE",

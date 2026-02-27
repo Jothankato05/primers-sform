@@ -395,6 +395,11 @@ function App() {
                             <div className="d-sub">Modular Efficiency Score</div>
                           </div>
                           <div className="dash-stat">
+                            <div className="d-label">Global Compliance</div>
+                            <div className="d-val text-blue">{m.meta.insights.metrics.global_compliance_rating}</div>
+                            <div className="d-sub">Governance Adherence</div>
+                          </div>
+                          <div className="dash-stat">
                             <div className="d-label">Market Velocity Risk</div>
                             <div className={`d-val ${m.meta.insights.metrics.velocity_risk === 'HIGH' ? 'text-red' : 'text-green'}`}>
                               {m.meta.insights.metrics.velocity_risk}
