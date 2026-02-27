@@ -99,6 +99,17 @@ button {
   text-align: left;
 }
 
+.sync-btn {
+  background: rgba(63, 185, 80, 0.05);
+  border-color: rgba(63, 185, 80, 0.1);
+  color: #3fb950;
+  margin-top: -0.5rem;
+}
+
+.sync-btn:hover {
+  background: rgba(63, 185, 80, 0.1);
+}
+
 .new-chat-btn:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--text-secondary);

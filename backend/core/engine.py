@@ -153,6 +153,9 @@ class PrimersEngine:
                 response = self._handle_ingest(target_path, graph)
 
         elif intent == Intent.KNOWLEDGE_ACQUISITION:
+            if "sync ecosystem" in input_text.lower():
+                return self._handle_ecosystem_sync(graph)
+            
             parts = input_text.split("github")
             target = parts[-1].strip() if len(parts) > 1 else ""
             if not target:
@@ -544,3 +547,38 @@ class PrimersEngine:
                 content += f"- **Fix**: {v.mitigation}\n\n"
 
         return EngineResponse(content, "health", 1.0, IntelligenceLevel.HEURISTIC, graph.derive_tone(Intent.VALIDATION, 1.0), graph.trace, meta={"health_score": score})
+
+    def _handle_ecosystem_sync(self, graph: ReasoningGraph) -> EngineResponse:
+        """
+        Scans all projects in the sibling 'scratch' directory.
+        This enables 'Global Intelligence' across the entire user workspace.
+        """
+        graph.add_step(Intent.KNOWLEDGE_ACQUISITION, "Global Scan", 1.0, "Traversing workspace projects")
+        
+        # Determine scratch root
+        # Typically looks like: c:\Users\jerry\.gemini\antigravity\scratch
+        current_dir = os.path.abspath(os.path.dirname(__file__)) # primers-sform/backend/core
+        scratch_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
+        
+        if not os.path.exists(scratch_root):
+             return EngineResponse(f"Global scratch root not found: {scratch_root}", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
+        
+        projects = []
+        for item in os.listdir(scratch_root):
+            if os.path.isdir(os.path.join(scratch_root, item)):
+                projects.append(item)
+        
+        graph.add_step(Intent.KNOWLEDGE_ACQUISITION, "Project Discovery", 1.0, f"Found {len(projects)} potential ecosystem nodes")
+        
+        synced = []
+        for p in projects:
+            p_path = os.path.join(scratch_root, p)
+            res = self._handle_ingest(p_path, graph)
+            synced.append(f"Ingested `{p}`")
+            
+        content = f"### 🌍 GLOBAL ECOSYSTEM SYNC COMPLETE\n"
+        content += f"Integrated **{len(synced)}** architectural nodes into the Sovereign Memory.\n\n"
+        content += "Detected projects:\n" + "\n".join([f"- `{p}`" for p in projects])
+        content += "\n\nMy reasoning engine is now workspace-aware."
+        
+        return EngineResponse(content, "knowledge", 1.0, IntelligenceLevel.SYMBOLIC, Tone.ASSERTIVE, graph.trace)

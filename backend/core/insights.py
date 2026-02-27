@@ -29,12 +29,24 @@ class ExecutiveInsights:
         
         # 4. Success Potential
         # Based on how well patterns are established
-        roi_potential = self._calculate_roi(entities)
+        roi_potential = self._calculate_roi(analyses)
+
+        # 5. Ecosystem Breath
+        projects = set()
+        for source in analyses.keys():
+            # Assume source paths like 'c:/.../scratch/project-name/file.py'
+            if "scratch" in source:
+                parts = source.split("scratch")[1].split(os.sep)
+                if len(parts) > 1:
+                    projects.add(parts[1])
+        
+        ecosystem_depth = len(projects) if projects else 1
 
         return {
             "timestamp": datetime.now().isoformat(),
             "metrics": {
                 "total_structural_units": total_nodes,
+                "project_ecosystem_depth": ecosystem_depth,
                 "architectural_health": max(0, 100 - (debt_score / 10)),
                 "technical_debt_cost": estimated_cost,
                 "velocity_risk": "HIGH" if debt_score > 500 else "STABLE",

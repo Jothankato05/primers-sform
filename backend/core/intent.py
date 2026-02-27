@@ -44,4 +44,7 @@ class IntentRouter:
         if "executive" in normalized or "report" in normalized or "cto" in normalized:
             return Intent.EXECUTIVE_INSIGHTS
             
+        if "sync" in normalized and "ecosystem" in normalized:
+            return Intent.KNOWLEDGE_ACQUISITION
+            
         return Intent.FALLBACK
