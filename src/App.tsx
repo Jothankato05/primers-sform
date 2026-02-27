@@ -402,25 +402,35 @@ function App() {
                           </div>
                           <div className="dash-stat">
                             <div className="d-label">Technical Debt (Est.)</div>
-                            <div className="d-val">${m.meta.insights.metrics.technical_debt_cost.toLocaleString()}</div>
-                            <div className="d-sub">Calculated per structural unit</div>
+                            <div className="d-val text-red">${m.meta.insights.metrics.technical_debt_cost.toLocaleString()}</div>
+                            <div className="d-sub">Liability Accumulation</div>
+                          </div>
+                        </div>
+
+                        <div className="dash-divider" />
+
+                        <div className="dash-grid">
+                          <div className="dash-stat">
+                            <div className="d-label">Annual Savings Plan</div>
+                            <div className="d-val text-gold">${m.meta.insights.metrics.annual_savings_forecast.toLocaleString()}</div>
+                            <div className="d-sub">Efficiency gain projection</div>
                           </div>
                           <div className="dash-stat">
-                            <div className="d-label">ROI Potential</div>
-                            <div className="d-val text-green">{m.meta.insights.metrics.roi_potential}</div>
-                            <div className="d-sub">Modular Efficiency Score</div>
+                            <div className="d-label">Efficiency ROI</div>
+                            <div className="d-val text-green">{m.meta.insights.metrics.efficiency_roi}</div>
+                            <div className="d-sub">Workflow acceleration</div>
                           </div>
                           <div className="dash-stat">
                             <div className="d-label">Global Compliance</div>
                             <div className="d-val text-blue">{m.meta.insights.metrics.global_compliance_rating}</div>
-                            <div className="d-sub">Governance Adherence</div>
+                            <div className="d-sub">Policy Governance</div>
                           </div>
                           <div className="dash-stat">
-                            <div className="d-label">Market Velocity Risk</div>
+                            <div className="d-label">Market Velocity</div>
                             <div className={`d-val ${m.meta.insights.metrics.velocity_risk === 'HIGH' ? 'text-red' : 'text-green'}`}>
                               {m.meta.insights.metrics.velocity_risk}
                             </div>
-                            <div className="d-sub">Stability Forecast</div>
+                            <div className="d-sub">Risk Profile</div>
                           </div>
                         </div>
                       </div>

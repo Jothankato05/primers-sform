@@ -89,3 +89,13 @@
 .text-blue {
     color: #58a6ff !important;
 }
+
+.text-gold {
+    color: #d29922 !important;
+}
+
+.dash-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 1.5rem 0;
+}
