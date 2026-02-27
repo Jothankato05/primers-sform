@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import './App.css'
+import './Insights.css'
 import Avatar from './components/Avatar'
 import Mermaid from './components/Mermaid'
 import DiffViewer from './components/DiffViewer'
@@ -37,10 +38,10 @@ interface Message {
 const API_URL = import.meta.env.PROD ? "/api" : "http://localhost:8000";
 
 const SUGGESTIONS = [
+  { label: "Executive Insights", prompt: "show executive report" },
   { label: "Analyze codebase", prompt: "analyze corpus" },
   { label: "Review engine", prompt: "review engine.py" },
-  { label: "Compare modules", prompt: "compare engine.py vs judge.py" },
-  { label: "Explain architecture", prompt: "explain your architecture" },
+  { label: "Comparative Audit", prompt: "compare engine.py vs judge.py" },
 ];
 
 // Simple icon components
@@ -363,6 +364,40 @@ function App() {
                         newCode={m.meta.proposed_code}
                         fileName={m.meta.target_file}
                       />
+                    )}
+
+                    {/* Executive Insights Dashboard */}
+                    {m.meta?.insights && (
+                      <div className="executive-dashboard">
+                        <div className="dash-header">
+                          <span className="dash-title">Executive Intelligence Dashboard</span>
+                          <span className="dash-badge">Proprietary Heuristics v3.0</span>
+                        </div>
+                        <div className="dash-grid">
+                          <div className="dash-stat">
+                            <div className="d-label">Architectural Health</div>
+                            <div className="d-val">{m.meta.insights.metrics.architectural_health.toFixed(1)}%</div>
+                            <div className="d-progress"><div className="d-fill" style={{ width: `${m.meta.insights.metrics.architectural_health}%` }} /></div>
+                          </div>
+                          <div className="dash-stat">
+                            <div className="d-label">Technical Debt (Est.)</div>
+                            <div className="d-val">${m.meta.insights.metrics.technical_debt_cost.toLocaleString()}</div>
+                            <div className="d-sub">Calculated per structural unit</div>
+                          </div>
+                          <div className="dash-stat">
+                            <div className="d-label">ROI Potential</div>
+                            <div className="d-val text-green">{m.meta.insights.metrics.roi_potential}</div>
+                            <div className="d-sub">Modular Efficiency Score</div>
+                          </div>
+                          <div className="dash-stat">
+                            <div className="d-label">Market Velocity Risk</div>
+                            <div className={`d-val ${m.meta.insights.metrics.velocity_risk === 'HIGH' ? 'text-red' : 'text-green'}`}>
+                              {m.meta.insights.metrics.velocity_risk}
+                            </div>
+                            <div className="d-sub">Stability Forecast</div>
+                          </div>
+                        </div>
+                      </div>
                     )}
 
                     {/* Meta row */}

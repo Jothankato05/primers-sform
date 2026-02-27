@@ -1,0 +1,87 @@
+/* 📊 Executive Dashboard Styles */
+.executive-dashboard {
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    color: #fff;
+    text-align: left;
+}
+
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: 0.75rem;
+}
+
+.dash-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dash-badge {
+    font-size: 0.65rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #737373;
+}
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.dash-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.d-label {
+    font-size: 0.65rem;
+    color: #737373;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.d-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.d-sub {
+    font-size: 0.65rem;
+    color: #555;
+    margin-top: 2px;
+}
+
+.d-progress {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.d-fill {
+    height: 100%;
+    background: #3fb950;
+    transition: width 1s ease-out;
+}
+
+.text-green {
+    color: #3fb950 !important;
+}
+
+.text-red {
+    color: #f85149 !important;
+}

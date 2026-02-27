@@ -22,6 +22,7 @@ from cognition.experience import ExperienceMonitor
 from cognition.local_llm import LocalLLMConnector
 from knowledge.github import GitHubConnector
 from cognition.auditor import AutonomousAuditor
+from core.insights import ExecutiveInsights
 
 try:
     import google.generativeai as genai
@@ -62,6 +63,7 @@ class PrimersEngine:
         )
         self.guard = PolicyGuard()
         self.auditor = AutonomousAuditor(self.m2)
+        self.insights = ExecutiveInsights(self.m2)
         
         # External Fallback (Gemini)
         self.external_api_key = os.getenv("GOOGLE_API_KEY") 
@@ -187,6 +189,27 @@ class PrimersEngine:
                 )
             else:
                 response = EngineResponse("Incomplete teaching sequence. Usage: `teach: [fact]`.", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
+
+        elif intent == Intent.EXECUTIVE_INSIGHTS:
+            report = self.insights.generate_report()
+            graph.add_step(Intent.EXECUTIVE_INSIGHTS, "Insight Generation", 1.0, "Aggregating metrics for CTO-level summary")
+            
+            # Format report as Markdown for the engine response
+            content = f"## 📊 Executive Architectural Report\n"
+            content += f"**Status:** {report['market_verdict']}\n\n"
+            content += f"### 🔑 Key Metrics\n"
+            for k, v in report['metrics'].items():
+                name = k.replace("_", " ").title()
+                content += f"- **{name}:** {v}\n"
+            
+            content += f"\n### 📝 Strategic Recommendations\n"
+            for rec in report['recommendations']:
+                content += f"- {rec}\n"
+            
+            content += f"\n*Generated at {report['timestamp']}*"
+            
+            response = EngineResponse(content, "knowledge", 1.0, IntelligenceLevel.SYMBOLIC, Tone.ASSERTIVE, graph.trace, meta={"insights": report})
+            return response
 
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled

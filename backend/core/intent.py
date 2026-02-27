@@ -10,6 +10,7 @@ class Intent(Enum):
     INGESTION = auto()
     KNOWLEDGE_ACQUISITION = auto()
     TEACHING = auto()
+    EXECUTIVE_INSIGHTS = auto()
     FALLBACK = auto()
 
 class IntentRouter:
@@ -40,4 +41,7 @@ class IntentRouter:
         if "learn" in normalized or "github" in normalized:
             return Intent.KNOWLEDGE_ACQUISITION
         
+        if "executive" in normalized or "report" in normalized or "cto" in normalized:
+            return Intent.EXECUTIVE_INSIGHTS
+            
         return Intent.FALLBACK
