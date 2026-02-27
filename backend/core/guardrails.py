@@ -1,6 +1,6 @@
 
 from typing import List, Dict, Any
-from core.types import PolicySeverity
+from core.guard import PolicySeverity
 
 class PolicyViolation:
     def __init__(self, policy_id: str, target: str, message: str, severity: PolicySeverity, mitigation: str):

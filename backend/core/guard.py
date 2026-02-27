@@ -4,7 +4,9 @@ import enum
 
 class PolicySeverity(enum.Enum):
     INFO = "info"
+    ADVISORY = "advisory"
     WARNING = "warning"
+    CRITICAL = "critical"
     BLOCKER = "blocker"
 
 @dataclass
