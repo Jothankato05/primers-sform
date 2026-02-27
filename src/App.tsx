@@ -91,6 +91,7 @@ function App() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isTyping = input.trim().length > 0;
   const [currentEmotion, setCurrentEmotion] = useState<string>('neutral');
+  const [history, setHistory] = useState<{ id: string, title: string, messages: Message[] }[]>([]);
 
   // Fetch Stats
   useEffect(() => {
@@ -203,8 +204,17 @@ function App() {
   };
 
   const newSession = () => {
+    if (messages.length > 0) {
+      const firstMsg = messages.find(m => m.role === 'user')?.content || 'New Chat';
+      setHistory(h => [{ id: Date.now().toString(), title: firstMsg, messages }, ...h].slice(0, 10));
+    }
     setMessages([]);
     setInput('');
+    setShowTrace(null);
+  };
+
+  const loadSession = (session: { title: string, messages: Message[] }) => {
+    setMessages(session.messages);
     setShowTrace(null);
   };
 
@@ -227,13 +237,13 @@ function App() {
         </button>
 
         {/* Recents */}
-        {messages.filter(m => m.role === 'user').length > 0 && (
+        {history.length > 0 && (
           <div className="sidebar-section">
-            <div className="section-label">Recent</div>
-            {messages.filter(m => m.role === 'user').slice(-6).reverse().map(m => (
-              <button key={m.id} className="history-btn" onClick={() => send(m.content)}>
+            <div className="section-label">Recent Sessions</div>
+            {history.map(s => (
+              <button key={s.id} className="history-btn" onClick={() => loadSession(s)}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                {m.content.length > 28 ? m.content.slice(0, 26) + '…' : m.content}
+                {s.title.length > 28 ? s.title.slice(0, 26) + '…' : s.title}
               </button>
             ))}
           </div>
