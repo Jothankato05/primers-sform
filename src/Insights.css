@@ -99,3 +99,29 @@
     background: rgba(255, 255, 255, 0.08);
     margin: 1.5rem 0;
 }
+
+.apply-fix-btn {
+    background: #3fb950;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    width: fit-content;
+}
+
+.apply-fix-btn:hover {
+    background: #46cf59;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(63, 185, 80, 0.3);
+}
+
+.apply-fix-btn:active {
+    transform: translateY(0);
+}

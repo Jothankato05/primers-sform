@@ -11,6 +11,7 @@ class Intent(Enum):
     KNOWLEDGE_ACQUISITION = auto()
     TEACHING = auto()
     EXECUTIVE_INSIGHTS = auto()
+    APPLY_REFACTOR = auto()
     FALLBACK = auto()
 
 class IntentRouter:
@@ -46,5 +47,8 @@ class IntentRouter:
             
         if "sync" in normalized and "ecosystem" in normalized:
             return Intent.KNOWLEDGE_ACQUISITION
+            
+        if "apply" in normalized and "refactor" in normalized:
+            return Intent.APPLY_REFACTOR
             
         return Intent.FALLBACK

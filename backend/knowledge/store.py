@@ -62,6 +62,14 @@ class KnowledgeStore:
                     confidence REAL
                 )
             """)
+            # M2 Commercial: Real-world value scaling
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS commercial_metrics (
+                    metric_id TEXT PRIMARY KEY,
+                    value REAL
+                )
+            """)
+            cursor.execute("INSERT OR IGNORE INTO commercial_metrics (metric_id, value) VALUES ('total_debt_repaid', 0.0)")
             conn.commit()
 
     def save_interaction(self, query: str, response: str, confidence: float):
@@ -190,3 +198,18 @@ class KnowledgeStore:
             for row in cursor.fetchall():
                 results[row[0]] = json.loads(row[1])
         return results
+
+    def get_repaid_debt(self) -> float:
+        if not self.enabled: return 0.0
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM commercial_metrics WHERE metric_id = 'total_debt_repaid'")
+            row = cursor.fetchone()
+            return row[0] if row else 0.0
+
+    def add_repaid_debt(self, amount: float):
+        if not self.enabled: return
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE commercial_metrics SET value = value + ? WHERE metric_id = 'total_debt_repaid'", (amount,))
+            conn.commit()

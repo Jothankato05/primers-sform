@@ -52,6 +52,9 @@ class ExecutiveInsights:
         # Total Units * Efficiency Multiplier * Avg Dev Day Cost
         annual_savings = (total_nodes * 250) + (compliance_score * 120)
         
+        # 8. Repaid Debt (Sovereign Auto-Refactor)
+        repaid_debt = self.m2.get_repaid_debt()
+        
         return {
             "timestamp": datetime.now().isoformat(),
             "metrics": {
@@ -60,6 +63,7 @@ class ExecutiveInsights:
                 "global_compliance_rating": f"{compliance_score}%",
                 "architectural_health": max(0, 100 - (debt_score / 10)),
                 "technical_debt_cost": estimated_cost,
+                "total_debt_repaid": repaid_debt,
                 "velocity_risk": "HIGH" if debt_score > 500 else "STABLE",
                 "roi_potential": f"{roi_potential}%",
                 "annual_savings_forecast": annual_savings,

@@ -214,6 +214,19 @@ class PrimersEngine:
             response = EngineResponse(content, "knowledge", 1.0, IntelligenceLevel.SYMBOLIC, Tone.ASSERTIVE, graph.trace, meta={"insights": report})
             return response
 
+        elif intent == Intent.APPLY_REFACTOR:
+            # The frontend should send "apply refactor to [file]"
+            target_file = input_text.split("refactor to")[-1].strip()
+            # We need the proposed code. In a real session, this would be in memory.
+            # For now, we'll try to find the last refactor plan for this file in M1 session context.
+            last_entry = self.session.get_last_entry()
+            if last_entry and last_entry.get("meta", {}).get("target_file") == target_file:
+                proposed_code = last_entry["meta"].get("proposed_code")
+                if proposed_code:
+                    return self._handle_apply_refactor(target_file, proposed_code, graph)
+            
+            return EngineResponse(f"No active refactor plan found for '{target_file}'. Generate a plan first.", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
+
         elif intent == Intent.FALLBACK:
             # 1. Cloud Fallback (Gemini) if configured and enabled
             if self.model and self.gov.is_enabled("external_llm"):
@@ -590,3 +603,39 @@ class PrimersEngine:
         content += "\n\nMy reasoning engine is now workspace-aware."
         
         return EngineResponse(content, "knowledge", 1.0, IntelligenceLevel.SYMBOLIC, Tone.ASSERTIVE, graph.trace)
+
+    def _handle_apply_refactor(self, target_file: str, proposed_code: str, graph: ReasoningGraph) -> EngineResponse:
+        """
+        AUTONOMOUS LAYER: Directly applies code changes to the filesystem.
+        Tracks 'Repaid Debt' in the Sovereign Knowledge Store.
+        """
+        graph.add_step(Intent.APPLY_REFACTOR, "Filesystem Write", 1.0, f"Writing self-healing patch to {target_file}")
+        
+        try:
+            # 1. Resolve Path (fuzzy match as we do in ingest)
+            # Find the actual path from analyzer
+            full_path = None
+            for src in self.analyzer.raw_data.keys():
+                if target_file in src:
+                    full_path = src
+                    break
+            
+            if not full_path or not os.path.exists(full_path):
+                 return EngineResponse(f"Security Block: Could not verify absolute path for '{target_file}'", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
+            
+            # 2. Write the fix
+            with open(full_path, "w", encoding="utf-8") as f:
+                f.write(proposed_code)
+            
+            # 3. Track Corporate ROI: 1 Auto-Fix = $1,500 debt repaid (approximate market value of senior refactor)
+            savings = 1500.0
+            self.m2.add_repaid_debt(savings)
+            
+            content = f"### 🛠️ AUTONOMOUS REFACTOR COMPLETE\n"
+            content += f"I have successfully applied the self-healing patch to `{target_file}`.\n\n"
+            content += f"**Business Impact**: This action has 'repaid' **${savings:,.0f}** in architectural debt from your workspace."
+            
+            return EngineResponse(content, "success", 1.0, IntelligenceLevel.SYMBOLIC, Tone.ASSERTIVE, graph.trace)
+            
+        except Exception as e:
+            return EngineResponse(f"Refactor Failed: {str(e)}", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)

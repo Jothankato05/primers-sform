@@ -380,11 +380,20 @@ function App() {
 
                     {/* Diff Viewer Integration */}
                     {m.meta?.current_code && m.meta?.proposed_code && (
-                      <DiffViewer
-                        oldCode={m.meta.current_code}
-                        newCode={m.meta.proposed_code}
-                        fileName={m.meta.target_file}
-                      />
+                      <div className="diff-wrapper">
+                        <DiffViewer
+                          oldCode={m.meta.current_code}
+                          newCode={m.meta.proposed_code}
+                          fileName={m.meta.target_file}
+                        />
+                        <button
+                          className="apply-fix-btn"
+                          onClick={() => send(`apply refactor to ${m.meta.target_file}`)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginRight: '6px' }}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                          Apply Fix & Repay Debt
+                        </button>
+                      </div>
                     )}
 
                     {/* Executive Insights Dashboard */}
@@ -404,6 +413,11 @@ function App() {
                             <div className="d-label">Technical Debt (Est.)</div>
                             <div className="d-val text-red">${m.meta.insights.metrics.technical_debt_cost.toLocaleString()}</div>
                             <div className="d-sub">Liability Accumulation</div>
+                          </div>
+                          <div className="dash-stat">
+                            <div className="d-label">Total Debt Repaid</div>
+                            <div className="d-val text-green">${m.meta.insights.metrics.total_debt_repaid.toLocaleString()}</div>
+                            <div className="d-sub">Autonomous Value Generated</div>
                           </div>
                         </div>
 
