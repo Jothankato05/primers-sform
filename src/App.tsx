@@ -93,6 +93,7 @@ function App() {
   const isTyping = input.trim().length > 0;
   const [currentEmotion, setCurrentEmotion] = useState<string>('neutral');
   const [history, setHistory] = useState<{ id: string, title: string, messages: Message[] }[]>([]);
+  const [isEnterprise, setIsEnterprise] = useState<boolean>(false);
 
   // Fetch Stats
   useEffect(() => {
@@ -241,6 +242,21 @@ function App() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
           Sync Ecosystem
         </button>
+
+        {!isEnterprise && (
+          <div className="commercial-card" onClick={() => setIsEnterprise(true)}>
+            <div className="card-tag">PRO</div>
+            <div className="card-title">Upgrade to Enterprise</div>
+            <div className="card-desc">Unlock Autonomous Self-Healing & Compliance Guardrails.</div>
+          </div>
+        )}
+
+        {isEnterprise && (
+          <div className="enterprise-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '6px' }}><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" /></svg>
+            ENTERPRISE LICENSE ACTIVE
+          </div>
+        )}
 
         {/* Recents */}
         {history.length > 0 && (

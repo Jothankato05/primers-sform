@@ -81,7 +81,7 @@ class KnowledgeStore:
     def search_interactions(self, query: str, limit: int = 3) -> List[Dict[str, Any]]:
         if not self.enabled: return []
         results = []
-        words = [w for w in query.lower().split() if len(w) > 3]
+        words = [w for w in query.lower().split() if len(w) >= 3]
         if not words: return []
         
         try:

@@ -110,6 +110,63 @@ button {
   background: rgba(63, 185, 80, 0.1);
 }
 
+.commercial-card {
+  background: linear-gradient(135deg, #1e1e1e 0%, #171717 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.commercial-card:hover {
+  border-color: #3fb950;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.card-tag {
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: #3fb950;
+  color: #000;
+  padding: 1px 4px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.card-desc {
+  font-size: 0.65rem;
+  color: #888;
+  line-height: 1.3;
+}
+
+.enterprise-badge {
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  color: #58a6ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .new-chat-btn:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--text-secondary);
