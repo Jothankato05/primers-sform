@@ -85,17 +85,17 @@ class ExecutiveInsights:
     def _generate_recommendations(self, debt: float, nodes: int) -> List[str]:
         recs = []
         if debt > 1000:
-            recs.append("CRITICAL: Immediate refactor of god-objects required to prevent velocity collapse.")
+            recs.append("EXECUTION REQUIRED: Immediate liquidation of god-objects is mandatory to survive technical bankruptcy.")
         if nodes < 10:
-            recs.append("GROWTH: Expand core logic to increase market depth.")
+            recs.append("EXPANSION MANDATE: Force-merge core logic into new modules to capture technical market share.")
         else:
-            recs.append("STABILITY: Maintain current modular pattern for high-velocity output.")
+            recs.append("DOMINANCE: Enforce the current modular pattern. Any deviation will be blocked by Sovereign Guardrails.")
         return recs
 
     def _get_market_verdict(self, debt: float) -> str:
         if debt < 500:
-            return "ENTERPRISE READY - High Scalability Potential"
+            return "ELITE STATUS - Pristine Architecture; Ready for Global Dominance"
         elif debt < 1500:
-            return "TRANSITIONAL - Moderate Maintenance Overhead"
+            return "WARNING - Structural Friction Detected; Executive Intervention Required"
         else:
-            return "DEBT HEAVY - Higher Operational Risk"
+            return "BANKRUPT - Technical Debt Overload; Halt All Development and Refactor"
