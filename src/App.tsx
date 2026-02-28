@@ -410,9 +410,14 @@ function App() {
                             <div className="d-progress"><div className="d-fill" style={{ width: `${m.meta.insights.metrics.architectural_health}%` }} /></div>
                           </div>
                           <div className="dash-stat">
-                            <div className="d-label">Technical Debt (Est.)</div>
+                            <div className="d-label">Adjusted Debt (V4)</div>
                             <div className="d-val text-red">${m.meta.insights.metrics.technical_debt_cost.toLocaleString()}</div>
-                            <div className="d-sub">Liability Accumulation</div>
+                            <div className="d-sub">Risk Adjusted exposure</div>
+                          </div>
+                          <div className="dash-stat">
+                            <div className="d-label">PDM Multiplier</div>
+                            <div className="d-val text-gold">{m.meta.insights.metrics.pdm_multiplier}</div>
+                            <div className="d-sub">Structural friction coefficient</div>
                           </div>
                           <div className="dash-stat">
                             <div className="d-label">Total Debt Repaid</div>

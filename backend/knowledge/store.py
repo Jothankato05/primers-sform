@@ -62,22 +62,26 @@ class KnowledgeStore:
                     confidence REAL
                 )
             """)
-            # M2 Commercial: Real-world value scaling
+            # M2 Monitoring: V4 Risk Tracking
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS commercial_metrics (
-                    metric_id TEXT PRIMARY KEY,
-                    value REAL
-                )
-            """)
-            # M2 Graph: Sovereign Topology
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS relationships (
+                CREATE TABLE IF NOT EXISTS risk_snapshots (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     source TEXT,
-                    target TEXT,
-                    type TEXT,
-                    strength REAL,
-                    UNIQUE(source, target, type)
+                    timestamp TEXT,
+                    s_score REAL,
+                    v_score REAL,
+                    k_score REAL,
+                    c_score REAL,
+                    total_risk REAL,
+                    classification TEXT
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT,
+                    timestamp TEXT,
+                    metadata TEXT
                 )
             """)
             cursor.execute("INSERT OR IGNORE INTO commercial_metrics (metric_id, value) VALUES ('total_debt_repaid', 0.0)")
@@ -246,3 +250,15 @@ class KnowledgeStore:
                 if src not in graph: graph[src] = []
                 graph[src].append(tgt)
         return graph
+
+    def save_risk_snapshot(self, source: str, s: float, v: float, k: float, c: float, total: float, classification: str):
+        if not self.enabled: return
+        timestamp = datetime.now().isoformat()
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO risk_snapshots 
+                (source, timestamp, s_score, v_score, k_score, c_score, total_risk, classification)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (source, timestamp, s, v, k, c, total, classification))
+            conn.commit()

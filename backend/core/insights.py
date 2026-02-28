@@ -59,14 +59,24 @@ class ExecutiveInsights:
         
         # Extract Top 3 Hotspots (Highest Total Risk)
         hotspots = sorted(risk_nodes.values(), key=lambda x: x.total_risk_score, reverse=True)[:3]
-        fragility_report = [
-            {
+        fragility_report = []
+        for h in hotspots:
+            fragility_report.append({
                 "node": h.source,
                 "score": round(h.total_risk_score, 1),
                 "risk_type": h.classification,
-                "blast_radius": round(h.blast_radius, 1)
-            } for h in hotspots
-        ]
+                "blast_radius": round(h.criticality_risk * 100, 1)
+            })
+            # Persist Snapshot for V4 Trend Audit
+            self.m2.save_risk_snapshot(h.source, h.structural_risk, h.volatility_risk, h.knowledge_risk, h.criticality_risk, h.total_risk_score, h.classification)
+
+        # 8. PDM (Primers Debt Multiplier) Economics
+        # Value = (RiskIndex * BusinessCriticality * Exposure)
+        pdm_score = self._calculate_pdm(risk_nodes)
+        
+        # 9. Dynamic Technical Debt (Adjusted by PDM)
+        # Base Debt * PDM multiplier
+        adjusted_debt_cost = estimated_cost * pdm_score
 
         # 7. Predictive Savings Forecast
         # Total Units * Efficiency Multiplier * Avg Dev Day Cost
@@ -82,7 +92,9 @@ class ExecutiveInsights:
                 "project_ecosystem_depth": ecosystem_depth,
                 "global_compliance_rating": f"{compliance_score}%",
                 "architectural_health": max(0, 100 - (debt_score / 10)),
-                "technical_debt_cost": estimated_cost,
+                "technical_debt_cost": adjusted_debt_cost,
+                "base_debt_exposure": estimated_cost,
+                "pdm_multiplier": f"{pdm_score:.2f}x",
                 "total_debt_repaid": repaid_debt,
                 "fragility_hotspots": fragility_report,
                 "velocity_risk": "HIGH" if debt_score > 500 or any(h.total_risk_score > 70 for h in hotspots) else "STABLE",
@@ -95,8 +107,24 @@ class ExecutiveInsights:
         }
 
     def _calculate_debt(self, analyses: Dict) -> float:
-        # Placeholder for complex heuristic: units * (average_complexity ^ 1.2)
-        return len(analyses) * 4.5 # Example multiplier
+        # Scale by complexity and repository count
+        return sum(a.get('complexity', 5) for a in analyses.values()) * 0.8
+        
+    def _calculate_pdm(self, risk_nodes: Dict) -> float:
+        """
+        V4 Financial Engine: PDM = 1 + Σ (w_i * (RiskIndex_i/100))
+        Weights criticality and change volume to compute systemic exposure.
+        """
+        if not risk_nodes: return 1.0
+        
+        # Average risk across all nodes weighted by criticality
+        total_pdm = 1.0
+        for node in risk_nodes.values():
+            # If a node is a strategic hub (BLUE) or instable (RED), it amplifies the multiplier
+            amplification = (node.total_risk_score / 100) * (1.0 + node.criticality_risk)
+            total_pdm += (amplification / len(risk_nodes))
+            
+        return min(3.5, total_pdm)
 
     def _calculate_roi(self, analyses: Dict) -> int:
         # ROI is higher if the code is modular
