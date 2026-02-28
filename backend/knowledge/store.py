@@ -69,6 +69,17 @@ class KnowledgeStore:
                     value REAL
                 )
             """)
+            # M2 Graph: Sovereign Topology
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS relationships (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source TEXT,
+                    target TEXT,
+                    type TEXT,
+                    strength REAL,
+                    UNIQUE(source, target, type)
+                )
+            """)
             cursor.execute("INSERT OR IGNORE INTO commercial_metrics (metric_id, value) VALUES ('total_debt_repaid', 0.0)")
             conn.commit()
 
@@ -213,3 +224,25 @@ class KnowledgeStore:
             cursor = conn.cursor()
             cursor.execute("UPDATE commercial_metrics SET value = value + ? WHERE metric_id = 'total_debt_repaid'", (amount,))
             conn.commit()
+
+    def save_relationship(self, source: str, target: str, rel_type: str = "depends", strength: float = 1.0):
+        if not self.enabled: return
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR REPLACE INTO relationships (source, target, type, strength)
+                VALUES (?, ?, ?, ?)
+            """, (source, target, rel_type, strength))
+            conn.commit()
+
+    def get_graph(self) -> Dict[str, List[str]]:
+        if not self.enabled: return {}
+        graph = {}
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT source, target FROM relationships")
+            for row in cursor.fetchall():
+                src, tgt = row
+                if src not in graph: graph[src] = []
+                graph[src].append(tgt)
+        return graph

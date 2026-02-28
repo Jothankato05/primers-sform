@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from typing import Dict, Any, List
 from core.guardrails import SovereignGuardrails
+from core.risk import RiskScoringCore
 
 class ExecutiveInsights:
     """
@@ -13,6 +14,10 @@ class ExecutiveInsights:
     def __init__(self, m2_store):
         self.m2 = m2_store
         self.guardrails = SovereignGuardrails()
+        # Initialize Risk Engine with scratch root
+        current_dir = os.path.dirname(__file__)
+        scratch_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
+        self.risk_engine = RiskScoringCore(scratch_root)
 
     def generate_report(self) -> Dict[str, Any]:
         """
@@ -48,6 +53,21 @@ class ExecutiveInsights:
         violations = self.guardrails.audit_workspace(analyses)
         compliance_score = max(0, 100 - (len(violations) * 2))
 
+        # 7. Systemic Fragility Mapping (V4 Core)
+        graph = self.m2.get_graph()
+        risk_nodes = self.risk_engine.compute_risk(analyses, graph)
+        
+        # Extract Top 3 Hotspots (Highest Total Risk)
+        hotspots = sorted(risk_nodes.values(), key=lambda x: x.total_risk_score, reverse=True)[:3]
+        fragility_report = [
+            {
+                "node": h.source,
+                "score": round(h.total_risk_score, 1),
+                "risk_type": h.classification,
+                "blast_radius": round(h.blast_radius, 1)
+            } for h in hotspots
+        ]
+
         # 7. Predictive Savings Forecast
         # Total Units * Efficiency Multiplier * Avg Dev Day Cost
         annual_savings = (total_nodes * 250) + (compliance_score * 120)
@@ -64,7 +84,8 @@ class ExecutiveInsights:
                 "architectural_health": max(0, 100 - (debt_score / 10)),
                 "technical_debt_cost": estimated_cost,
                 "total_debt_repaid": repaid_debt,
-                "velocity_risk": "HIGH" if debt_score > 500 else "STABLE",
+                "fragility_hotspots": fragility_report,
+                "velocity_risk": "HIGH" if debt_score > 500 or any(h.total_risk_score > 70 for h in hotspots) else "STABLE",
                 "roi_potential": f"{roi_potential}%",
                 "annual_savings_forecast": annual_savings,
                 "efficiency_roi": f"{(roi_potential * 1.4):.1f}%"

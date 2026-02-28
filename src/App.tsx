@@ -447,6 +447,26 @@ function App() {
                             <div className="d-sub">Risk Profile</div>
                           </div>
                         </div>
+
+                        <div className="dash-divider" />
+
+                        <div className="dash-section">
+                          <div className="d-label">Systemic Fragility Hotspots</div>
+                          <div className="hotspot-list">
+                            {m.meta.insights.metrics.fragility_hotspots.map((h: any, i: number) => (
+                              <div key={i} className={`hotspot-item risk-${h.risk_type.toLowerCase()}`}>
+                                <div className="h-info">
+                                  <div className="h-name">{h.node}</div>
+                                  <div className="h-meta">Blast Radius: {h.blast_radius}%</div>
+                                </div>
+                                <div className="h-score">
+                                  <div className="h-val">{h.score}</div>
+                                  <div className="h-label">RISK INDEX</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     )}
 

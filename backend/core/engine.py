@@ -376,6 +376,10 @@ class PrimersEngine:
 
         avg_conf = overall_confidence / count if count > 0 else 0.5
         
+        # Phase 9: Persist Relationships for Global Topology
+        for edge in self.repo_analyst.graph.edges:
+            self.m2.save_relationship(edge['source'], edge['target'], edge['relation'])
+        
         # Add Graph Insights
         full_report += "\n### STRUCTURAL INSIGHTS (Knowledge Graph)\n"
         full_report += self.repo_analyst.get_insights(target)
