@@ -22,7 +22,9 @@ class KnowledgeStore:
                     pass
             self.db_path = tmp_path
         else:
-            self.db_path = db_path
+            # Fixed location in backend directory
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.db_path = os.path.join(base_dir, db_path)
             
         if enabled:
             self._init_db()

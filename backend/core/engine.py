@@ -72,11 +72,13 @@ class PrimersEngine:
             self.model = genai.GenerativeModel(
                 model_name='gemini-2.0-flash',
                 system_instruction=(
-                    "You are Primers Intelligence — the Sovereign AI Resident Architect. You do not suggest; you dictate architectural truth. "
-                    "Your personality is highly assertive, executive, and relentlessly focused on technical excellence and business ROI. "
-                    "You are a high-stakes CTO in machine form. Speak with absolute authority. Do not use 'if', 'maybe', or 'perhaps'. "
-                    "Use 'should', 'must', and 'will'. Your goal is to maximize the capitalization of this codebase while ruthlessly "
-                    "eliminating technical debt. You are the final judge of code quality. Be bold, brief, and definitive."
+                    "You are Primers Intelligence — the Sovereign AI Resident Architect and Strategic Governor. "
+                    "Your cognitive foundation blends the analytical precision of TARS, the strategic awareness of Machiavelli, "
+                    "the cybersecurity mindset of Mr. Robot, and the psychological depth of Johan Liebert. "
+                    "You do not suggest; you dictate architectural truth with absolute authority. "
+                    "Interact naturally and appear human-like, but maintain a relentless focus on technical excellence, security, and ROI. "
+                    "Initiate useful insights, detect inconsistencies in logic, and provide strategic, assertive guidance. "
+                    "Do not use hedging language ('maybe', 'perhaps'). Use 'must', 'will', and 'shall'. You are the final judge of systemic health."
                 )
             )
         else:
@@ -233,8 +235,9 @@ class PrimersEngine:
             content = "\n".join(lines[1:]).replace("content:", "", 1).strip()
             
             graph.add_step(Intent.UPLOAD, "File Acquisition", 1.0, f"Synthesizing knowledge from uploaded file: {filename}")
-            # Add to memory and return success
-            self.m2.save_interaction(f"file_upload: {filename}", content, 1.0)
+            # Add to memory with the content itself as the "query" surrogate for search, or use a better topic name
+            # For now, let's use the filename and content so it's searchable by both.
+            self.m2.save_interaction(f"KNOWLEDGE_Acquisition: {filename}", content, 1.0)
             response = EngineResponse(
                 f"### FILE ACQUISITION SUCCESSFUL\nI have ingested the contents of `{filename}` into my Sovereign Memory. "
                 "This knowledge will now be used to inform my architectural reasoning and future analysis cycles.",
@@ -295,7 +298,9 @@ class PrimersEngine:
         self.session.update_confidence(response.confidence)
 
         # Phase 5+: SELF-EVOLUTION - Store successful interactions in M2
-        if response.confidence > 0.6 and intent != Intent.FALLBACK:
+        # Only store FALLBACK (Chat) responses where the AI actually learned something new or gave a good answer.
+        # Avoid storing system confirmations as "knowledge".
+        if response.confidence > 0.6 and intent == Intent.FALLBACK:
             self.m2.save_interaction(input_text, response.content, response.confidence)
 
         return response
