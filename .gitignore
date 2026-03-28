@@ -45,3 +45,12 @@ coverage.xml
 .mypy_cache/
 *.db
 *.pdf
+
+# SecureLink Models (Massive Binaries)
+backend/models/
+models/
+
+# Environment
+.env
+backend/.env
+!.env.example

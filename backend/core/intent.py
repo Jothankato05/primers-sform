@@ -13,6 +13,10 @@ class Intent(Enum):
     EXECUTIVE_INSIGHTS = auto()
     APPLY_REFACTOR = auto()
     UPLOAD = auto()
+    EMERGENCY_TRIAGE = auto()
+    RESCUE_LOGIC = auto()
+    VISION_WITNESS = auto()
+    VOICE_GUARDIAN = auto()
     FALLBACK = auto()
 
 class IntentRouter:
@@ -53,5 +57,14 @@ class IntentRouter:
             
         if "apply" in normalized and "refactor" in normalized:
             return Intent.APPLY_REFACTOR
+            
+        if "triage" in normalized or "emergency" in normalized:
+            return Intent.EMERGENCY_TRIAGE
+        if "rescue" in normalized or "logic" in normalized or "protocol" in normalized:
+            return Intent.RESCUE_LOGIC
+        if "witness" in normalized or "image" in normalized or "detect" in normalized:
+            return Intent.VISION_WITNESS
+        if "audio" in normalized or "voice" in normalized or "listen" in normalized:
+            return Intent.VOICE_GUARDIAN
             
         return Intent.FALLBACK

@@ -23,6 +23,7 @@ from cognition.local_llm import LocalLLMConnector
 from knowledge.github import GitHubConnector
 from cognition.auditor import AutonomousAuditor
 from core.insights import ExecutiveInsights
+from cognition.emergency import EmergencyIntelligence
 
 try:
     import google.generativeai as genai
@@ -64,6 +65,8 @@ class PrimersEngine:
         self.guard = PolicyGuard()
         self.auditor = AutonomousAuditor(self.m2)
         self.insights = ExecutiveInsights(self.m2)
+        
+        self.emergency = EmergencyIntelligence()
         
         # External Fallback (Gemini)
         self.external_api_key = os.getenv("GOOGLE_API_KEY") 
@@ -163,6 +166,39 @@ class PrimersEngine:
                 response = EngineResponse("Usage: learn from github <username>", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
             else:
                 response = self._handle_github_learning(target, graph)
+
+        elif intent == Intent.EMERGENCY_TRIAGE:
+            report = input_text.split("triage")[-1].strip()
+            if not report:
+                response = EngineResponse("Provide emergency report text for triage.", "error", 1.0, IntelligenceLevel.SYMBOLIC, Tone.CAUTIOUS, graph.trace)
+            else:
+                graph.add_step(Intent.EMERGENCY_TRIAGE, "BERT Classifier", 1.0, "Analyzing report urgency via BERT-Triage")
+                res = self.emergency.triage_report(report)
+                msg = f"### EMERGENCY TRIAGE: {res['priority']}\n"
+                msg += f"**Confidence**: {res['confidence']:.2%}\n"
+                msg += f"**Category**: {res['category']}\n\n"
+                msg += "Executing protocol prioritization based on SecureLink infrastructure."
+                response = EngineResponse(msg, "triage", res['confidence'], IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace, meta=res)
+
+        elif intent == Intent.RESCUE_LOGIC:
+            situation = input_text.split("rescue")[-1].strip()
+            graph.add_step(Intent.RESCUE_LOGIC, "DAN-Qwen Logic", 1.0, "Generating rescue protocol via DAN-Qwen")
+            logic = self.emergency.generate_rescue_logic(situation)
+            response = EngineResponse(logic, "rescue", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
+
+        elif intent == Intent.VISION_WITNESS:
+            graph.add_step(Intent.VISION_WITNESS, "DETR Vision", 1.0, "Analyzing witness visual data via DETR")
+            res = self.emergency.analyze_witness_image({})
+            msg = "### IMAGE WITNESS SCAN\n"
+            msg += f"**Threat Level**: {res['threat_level']}\n"
+            msg += "**Detected Entities**:\n" + "\n".join([f"- {o}" for o in res['detected_objects']])
+            response = EngineResponse(msg, "witness", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace, meta=res)
+
+        elif intent == Intent.VOICE_GUARDIAN:
+            graph.add_step(Intent.VOICE_GUARDIAN, "Whisper Audio", 1.0, "Transcribing voice guardian stream via Whisper")
+            transcription = self.emergency.transcribe_voice_guardian(None)
+            msg = f"### VOICE GUARDIAN TRANSCRIPT\n\"{transcription}\""
+            response = EngineResponse(msg, "voice", 1.0, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
 
         elif "show blueprint" in input_text.lower():
             graph.add_step(Intent.EMPIRICAL_ANALYSIS, "Graph Assembly", 1.0, "Generating architectural blueprint")

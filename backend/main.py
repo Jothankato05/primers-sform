@@ -122,6 +122,9 @@ async def get_stats():
     # Proactive Auditor logic
     proactive_alert = engine.auditor.prepare_proactive_alert(health_score)
 
+    # Emergency status (Phase 5 Extension)
+    emergency_status = engine.emergency.get_emergency_status()
+
     return {
         "cpu": cpu,
         "memory": mem,
@@ -129,7 +132,8 @@ async def get_stats():
         "uptime": uptime_str,
         "intelligence_mode": "SOVEREIGN_CLOUD_HYBRID" if engine.model else "HYBRID_HEURISTIC",
         "health_score": health_score,
-        "proactive_alert": proactive_alert
+        "proactive_alert": proactive_alert,
+        "emergency_status": emergency_status
     }
 
 if __name__ == "__main__":

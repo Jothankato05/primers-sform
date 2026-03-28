@@ -5,6 +5,7 @@ import './Insights.css'
 import Avatar from './components/Avatar'
 import Mermaid from './components/Mermaid'
 import DiffViewer from './components/DiffViewer'
+import RescueDashboard from './components/RescueDashboard'
 
 interface ReasoningStep {
   step_id: string;
@@ -79,6 +80,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [showTrace, setShowTrace] = useState<string | null>(null);
+  const [view, setView] = useState<'chat' | 'rescue'>('chat');
   const [stats, setStats] = useState({
     cpu: 12,
     memory: 24,
@@ -86,7 +88,8 @@ function App() {
     uptime: '0h 0m',
     intelligence_mode: '...',
     health_score: 100,
-    proactive_alert: null as string | null
+    proactive_alert: null as string | null,
+    emergency_status: {} as Record<string, string>
   });
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -274,6 +277,11 @@ function App() {
           New Chat
         </button>
 
+        <button className={`new-chat-btn ${view === 'rescue' ? 'active-tab' : ''}`} onClick={() => setView(view === 'chat' ? 'rescue' : 'chat')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          {view === 'chat' ? 'Rescue SOS Dashboard' : 'Back to Code Intel'}
+        </button>
+
         <button className="new-chat-btn sync-btn" onClick={() => send("sync ecosystem")}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
           Sync Ecosystem
@@ -370,7 +378,9 @@ function App() {
 
         {/* Chat or Empty State */}
         <div className="chat-area">
-          {isEmpty ? (
+          {view === 'rescue' ? (
+             <RescueDashboard onCommand={(msg) => send(msg)} status={stats.emergency_status} />
+          ) : isEmpty ? (
             <div className="empty-state">
               <div className="empty-icon"><PIcon /></div>
               <h2 className="empty-title">Primers Intelligence</h2>
