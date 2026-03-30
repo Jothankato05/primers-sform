@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import './App.css'
 import './Insights.css'
 import Avatar from './components/Avatar'
@@ -615,6 +616,7 @@ function App() {
           <p className="input-hint">Enter to send · Shift + Enter for new line</p>
         </div>
       </main>
+      <SpeedInsights />
     </div>
   );
 }
