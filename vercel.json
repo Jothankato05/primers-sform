@@ -1,26 +1,13 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "dist"
-            }
-        },
-        {
-            "src": "api/*.py",
-            "use": "@vercel/python"
-        }
-    ],
     "rewrites": [
         {
             "source": "/api/health",
-            "destination": "api/health.py"
+            "destination": "/api/health.py"
         },
         {
             "source": "/api/(.*)",
-            "destination": "api/index.py"
+            "destination": "/api/index.py"
         },
         {
             "source": "/(.*)",
