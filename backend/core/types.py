@@ -6,7 +6,7 @@ from enum import Enum
 class IntelligenceLevel(Enum):
     SYMBOLIC = 0      # Pure logic/rules
     HEURISTIC = 1     # Graph + Pattern Matching
-    EXTERNAL = 2      # LLM (Gemini/Local)
+    EXTERNAL = 2      # Local LLM
 
 class Tone(Enum):
     ASSERTIVE = "assertive"       # Confidence >= 0.8

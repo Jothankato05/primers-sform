@@ -3,6 +3,7 @@ uvicorn
 pydantic
 requests
 python-dotenv
-google-generativeai
 reportlab
 Pillow
+psutil
+python-multipart

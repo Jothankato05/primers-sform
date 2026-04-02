@@ -258,44 +258,19 @@ class PrimersEngine:
             )
 
         elif intent == Intent.FALLBACK:
-            # 1. Cloud Fallback (Gemini) if configured and enabled
-            if self.model and self.gov.is_enabled("external_llm"):
-                graph.add_step(Intent.FALLBACK, "External Call", 0.9, "Routing to Gemini Intelligence")
-                try:
-                    # Build conversation history for multi-turn context
-                    history = self.session.get_messages()
-                    chat_history = [
-                        {"role": m["role"] if m["role"] != "assistant" else "model", "parts": [m["content"]]}
-                        for m in (history[:-1] if history else [])
-                    ]
-                    chat = self.model.start_chat(history=chat_history)
-                    res = chat.send_message(input_text_with_context)
-                    response = EngineResponse(res.text, "external", 0.95, IntelligenceLevel.EXTERNAL, Tone.ASSERTIVE, graph.trace)
-                except Exception as e:
-                    error_msg = str(e)
-                    graph.add_step(Intent.FALLBACK, "Gemini Error", 0.0, f"External failed: {error_msg}")
-                    if "429" in error_msg:
-                        chat_res = "### RATE LIMIT EXCEEDED\nMy connection to Gemini 2.0 has been throttled by API quotas. I am falling back to internal **Symbolic Reasoning** to maintain operational continuity."
-                    else:
-                        chat_res = self.local_llm.chat(input_text_with_context, history=self.session.get_messages())
-                
-                if not response and chat_res:
-                    response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
+            # 1. Local Sovereign Mode (Ollama offline fallback)
+            graph.add_step(Intent.FALLBACK, "Sovereign Chat", 0.8, "Processing via Symbolic Reasoning")
             
-            # 2. Local Sovereign Mode (Ollama offline fallback)
-            if not response:
-                graph.add_step(Intent.FALLBACK, "Sovereign Chat", 0.8, "Processing via Symbolic Reasoning")
-                
-                # SELF-EVOLUTION: Search for similar past interactions first
-                learned = self.m2.search_interactions(input_text)
-                learned_context = ""
-                if learned:
-                    graph.add_step(Intent.FALLBACK, "Pattern_Match", 0.9, f"Found {len(learned)} learned patterns")
-                    learned_context = "\n\nLearned Knowledge from past interactions:\n" + \
-                        "\n".join([f"- Previous Query: {l['query']}\n  Response: {l['response']}" for l in learned])
-                
-                chat_res = self.local_llm.chat(input_text_with_context + learned_context, history=self.session.get_messages())
-                response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
+            # SELF-EVOLUTION: Search for similar past interactions first
+            learned = self.m2.search_interactions(input_text)
+            learned_context = ""
+            if learned:
+                graph.add_step(Intent.FALLBACK, "Pattern_Match", 0.9, f"Found {len(learned)} learned patterns")
+                learned_context = "\n\nLearned Knowledge from past interactions:\n" + \
+                    "\n".join([f"- Previous Query: {l['query']}\n  Response: {l['response']}" for l in learned])
+            
+            chat_res = self.local_llm.chat(input_text_with_context + learned_context, history=self.session.get_messages())
+            response = EngineResponse(chat_res, "chat", 0.8, IntelligenceLevel.HEURISTIC, Tone.ASSERTIVE, graph.trace)
 
         if not response:
              response = self._local_reflex(input_text, graph)
@@ -613,7 +588,7 @@ class PrimersEngine:
         graph.add_step(Intent.KNOWLEDGE_ACQUISITION, "Global Scan", 1.0, "Traversing workspace projects")
         
         # Determine scratch root
-        # Typically looks like: c:\Users\jerry\.gemini\antigravity\scratch
+        # Typically looks like: [workspace_path]/scratch
         current_dir = os.path.abspath(os.path.dirname(__file__)) # primers-sform/backend/core
         scratch_root = os.path.abspath(os.path.join(current_dir, "..", "..", ".."))
         
