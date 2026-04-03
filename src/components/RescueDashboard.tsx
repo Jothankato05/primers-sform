@@ -20,7 +20,7 @@ interface AuditEntry {
 const RescueDashboard: React.FC<RescueDashboardProps> = ({ onCommand, status, session, onLogout }) => {
   const [triageText, setTriageText] = useState("");
   const [witnessImage, setWitnessImage] = useState<string | null>(null);
-  const [bboxData, setBboxData] = useState<any[]>([]);
+  const [, setBboxData] = useState<any[]>([]);
   const [witnessLoading, setWitnessLoading] = useState(false);
   const [triageResults, setTriageResults] = useState<any[]>([]);
   const [detrResults, setDetrResults] = useState<any[]>([]);
